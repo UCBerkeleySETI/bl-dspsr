@@ -36,6 +36,7 @@ namespace dsp {
   class Resize;
   class SampleDelay;
   class PhaseLockedFilterbank;
+  class FZoom;
 
   class PhaseSeriesUnloader;
   class SignalPath;
@@ -140,6 +141,15 @@ namespace dsp {
       period pulsar for the purposes of scintillation measurments */
     Reference::To<PhaseLockedFilterbank> phased_filterbank;
 
+    //! Coarse channel zoom
+    std::vector<Reference::To<FZoom> > fzoom;
+
+    //! Phase-locked filterbanks for zooms
+    std::vector<Reference::To<PhaseLockedFilterbank> > zoom_filterbank;
+
+    //! Unloaders for phase-locked filterbanks for zooms
+    std::vector<Reference::To<PhaseSeriesUnloader> > zoom_unloader;
+
     //! Detects the phase-coherent signal
     Reference::To<Detection> detect;
 
@@ -152,7 +162,7 @@ namespace dsp {
     void configure_fold (unsigned ifold, TimeSeries* to_fold);
     void configure_detection (Detection*, int);
 
-    PhaseSeriesUnloader* get_unloader (unsigned ifold);
+    PhaseSeriesUnloader* get_unloader (unsigned ifold, bool zoom=false);
     size_t get_nfold ();
 
     //! Prepare all fold instances
