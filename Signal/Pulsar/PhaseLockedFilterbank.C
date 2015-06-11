@@ -389,21 +389,13 @@ void dsp::PhaseLockedFilterbank::transformation ()
           else
             FTransform::fcc1d (ndat_fft, complex_spectrum[ipol], dat_ptr);
 
-          // NB FTransform swaps channels, so in detect loops below reverse
-          // channels as we add to profile
-
           // square-law detect
-          //unsigned out_ichan=inchan*nchan,fft_chan=2*(nchan-1);
-          unsigned out_ichan=inchan*nchan,fft_chan=0;
-          while (fft_chan<2*nchan)
-          //while (fft_chan)
+          unsigned out_ichan=inchan*nchan;
+          for (unsigned fft_chan=0; fft_chan < 2*nchan; fft_chan += 2)
           {
-            //unsigned fft_chan = 2*(nchan-ichan-1);
-            float* amps = output->get_datptr(out_ichan, out_ipol);
+            float* amps = output->get_datptr(out_ichan++, out_ipol);
             amps[phase_bin] += sqr(complex_spectrum[ipol][fft_chan]);
             amps[phase_bin] += sqr(complex_spectrum[ipol][fft_chan+1]);
-            //out_ichan++; fft_chan -= 2;
-            out_ichan++; fft_chan += 2;
           }
 
         } // for each polarization
@@ -411,18 +403,17 @@ void dsp::PhaseLockedFilterbank::transformation ()
         // Compute poln cross terms
         if (npol>2) 
         {
-          unsigned out_ichan=inchan*nchan,fft_ch=2*(nchan-1);
-          while (fft_ch)
+          unsigned out_ichan=inchan*nchan;
+          for (unsigned fft_ch=0; fft_ch < 2*nchan; fft_ch += 2)
           {
             float* amps_re = output->get_datptr(out_ichan, 2);
-            float* amps_im = output->get_datptr(out_ichan, 3);
+            float* amps_im = output->get_datptr(out_ichan++, 3);
             amps_re[phase_bin] += 
               complex_spectrum[0][fft_ch]  *complex_spectrum[1][fft_ch] +
               complex_spectrum[0][fft_ch+1]*complex_spectrum[1][fft_ch+1];
             amps_im[phase_bin] += 
               complex_spectrum[0][fft_ch]  *complex_spectrum[1][fft_ch+1] -
               complex_spectrum[0][fft_ch+1]*complex_spectrum[1][fft_ch];
-            out_ichan++; fft_ch -= 2;
           }
         }
       
