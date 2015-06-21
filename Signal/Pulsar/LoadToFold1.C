@@ -135,6 +135,9 @@ void dsp::LoadToFold::construct () try
   cudaStream_t stream = reinterpret_cast<cudaStream_t>( gpu_stream );
 #endif
 
+  // make filterbank configruation consistent
+  config->coherent_dedispersion = config->filterbank.get_coherent_dedispersion();
+
   if (manager->get_info()->get_detected())
   {
     Unpacker* unpacker = manager->get_unpacker();

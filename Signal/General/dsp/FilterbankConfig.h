@@ -42,6 +42,9 @@ namespace dsp
     void set_convolve_when (When w) { when = w; }
     When get_convolve_when () const { return when; }
 
+    void set_coherent_dedispersion (bool cd) {coherent_dedispersion = cd;}
+    bool get_coherent_dedispersion () {return coherent_dedispersion;}
+
     //! Set the device on which the unpacker will operate
     void set_device (Memory*);
 
@@ -58,6 +61,7 @@ namespace dsp
     unsigned nchan;
     unsigned freq_res;
     When when;
+    bool coherent_dedispersion;
 
   };
 
