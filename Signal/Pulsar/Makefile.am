@@ -22,10 +22,10 @@ CyclicFold.C
 if HAVE_CUFFT
 
 nobase_include_HEADERS += dsp/FoldCUDA.h dsp/TransferPhaseSeriesCUDA.h \
-			  dsp/CyclicFoldEngineCUDA.h
+			  dsp/CyclicFoldEngineCUDA.h dsp/PhaseLockedFilterbankCUDA.h
 
 libdspsr_la_SOURCES += FoldCUDA.cu TransferPhaseSeriesCUDA.C \
-		       CyclicFoldEngineCUDA.cu
+		       CyclicFoldEngineCUDA.cu PhaseLockedFilterbankCUDA.cu
 
 endif
 

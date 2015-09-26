@@ -72,7 +72,7 @@ namespace dsp {
     TimeDivide bin_divider;
 
     //! Get pointer to the output
-    PhaseSeries* get_result() const { return output; }
+    PhaseSeries* get_result() const;
 
     //! Normalize the spectra by the hits array
     void normalize_output ();
@@ -89,6 +89,10 @@ namespace dsp {
 
     //! Return cached FZoom; use smart pointer in case it's 
     Reference::To<FZoom> get_zoom() { return fzoom; }
+
+    class Engine;
+
+    void set_engine (Engine*);
 
   protected:
 
@@ -126,6 +130,27 @@ namespace dsp {
     bool overlap;
 
     Reference::To<FZoom> fzoom;
+
+    Reference::To<Engine> engine;
+
+  };
+
+  class PhaseLockedFilterbank::Engine : public OwnStream
+  {
+  public:
+
+    virtual void prepare ( const TimeSeries* in, unsigned ) = 0;
+
+    virtual void setup_phase_series (PhaseSeries*) = 0;
+
+    virtual void sync_phase_series (PhaseSeries*) = 0;
+
+    virtual void fpt_process (const TimeSeries* in,
+        unsigned nblock, unsigned block_advance,
+        unsigned phase_bin, unsigned idat_start,
+        double* total_integrated) = 0;
+
+    void do_nothing () {;}
 
   };
   

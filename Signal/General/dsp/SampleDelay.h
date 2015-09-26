@@ -48,6 +48,10 @@ namespace dsp {
     //! Get the zero delay (in samples)
     int64_t get_zero_delay () const;
 
+    class Engine;
+
+    void set_engine (Engine*);
+
   protected:
 
     //! The total delay (in samples)
@@ -64,6 +68,21 @@ namespace dsp {
 
     //! The sample delay function
     Reference::To<SampleDelayFunction> function;
+
+    //! Apply delays on device
+    Reference::To<Engine> engine;
+
+  };
+
+  class SampleDelay::Engine : public OwnStream
+  {
+  public:
+
+    virtual void fpt_copy (const dsp::TimeSeries * in, 
+        dsp::TimeSeries * out, uint64_t zero_delay, 
+        uint64_t output_nfloat, SampleDelayFunction* function) = 0;
+
+  protected:
 
   };
 

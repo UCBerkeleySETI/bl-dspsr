@@ -44,6 +44,8 @@
 #include "dsp/SKMaskerCUDA.h"
 #include "dsp/CyclicFoldEngineCUDA.h"
 #include "dsp/FZoomCUDA.h"
+#include "dsp/SampleDelayCUDA.h"
+#include "dsp/PhaseLockedFilterbankCUDA.h"
 #endif
 
 #include "dsp/SampleDelay.h"
@@ -521,7 +523,8 @@ void dsp::LoadToFold::construct () try
 #if HAVE_CUDA
       if (run_on_gpu)
       {
-        fzoom->set_engine(new CUDA::FZoomEngine (stream) );
+        fzoom->get_output()->set_memory (device_memory);
+        fzoom->set_engine (new CUDA::FZoomEngine (stream) );
       }
 #endif
       operations.push_back ( fzoom.get() );
@@ -534,10 +537,16 @@ void dsp::LoadToFold::construct () try
       zoom_delay->set_function (new Dedispersion::SampleDelay);
       if (kernel)
         kernel->set_fractional_delay (true);
+#if HAVE_CUDA
+      if (run_on_gpu)
+      {
+        zoom_delay->set_engine (new CUDA::SampleDelayEngine (stream) );
+      }
+#endif
       operations.push_back (zoom_delay);
 
       // Set up output
-      PhaseSeriesUnloader* archiver = get_unloader(i,true);
+      PhaseSeriesUnloader* archiver = get_unloader (i,true);
       char label[7+1];
       sprintf(label,".zoom%02d",i);
       archiver->set_extension(label);
@@ -550,9 +559,7 @@ void dsp::LoadToFold::construct () try
           new Subint<PhaseLockedFilterbank>;
 
         if (config->integration_length)
-        {
           sub_plfb->set_subint_seconds (config->integration_length);
-        }
 
         else if (config->integration_turns) 
         {
@@ -561,19 +568,20 @@ void dsp::LoadToFold::construct () try
         }
 
         sub_plfb->set_unloader (zoom_unloader[i]);
-
         zoom_filterbank[i] = sub_plfb;
-        cerr << "here is the subint address="<<zoom_filterbank[i].get() << endl;
-
       }
       else
-      {
         zoom_filterbank[i] = new PhaseLockedFilterbank;
-      }
 
       zoom_filterbank[i]->set_nbin (max_nbin); // maximum phase bins
       zoom_filterbank[i]->set_npol (config->npol);
-      zoom_filterbank[i]->set_goal_chan_bw(chan_bw);
+      zoom_filterbank[i]->set_goal_chan_bw (chan_bw);
+      //zoom_filterbank[i]->set_input (fzoom->get_output());
+#ifdef HAVE_CUDA
+      if (run_on_gpu)
+        zoom_filterbank[i]->set_engine (
+            new CUDA::PhaseLockedFilterbankEngine (stream) );
+#endif
       zoom_filterbank[i]->set_input (zoom_delay->get_output());
 
       // store a reference to zoom for later fine tuning
@@ -809,24 +817,6 @@ void dsp::LoadToFold::prepare ()
   if (phased_filterbank)
     phased_filterbank->bin_divider.set_predictor( predictor );
 
-  if (zoom_filterbank.size()) {
-    for (unsigned i=0; i < zoom_filterbank.size(); ++i) {
-      if (predictor) {
-        zoom_filterbank[i]->bin_divider.set_predictor( predictor );
-      }
-      else if (fold[0]->has_folding_period()) {
-        cerr << "setting folding period" << endl;
-        cerr << "setting epoch" << endl << fold[0]->get_reference_epoch().printall() <<endl;
-        zoom_filterbank[i]->bin_divider.set_folding_period(
-            fold[0]->get_folding_period(),fold[0]->get_reference_epoch());
-      }
-      else {
-        throw Error (InvalidState, "LoadToFold::prepare",
-            "no predictor / period found for zoom mode");
-      }
-    }
-  }
-
   const Pulsar::Parameters* parameters = 0;
   if (fold[0]->has_pulsar_ephemeris())
     parameters = fold[0]->get_pulsar_ephemeris();
@@ -918,6 +908,19 @@ void dsp::LoadToFold::prepare ()
 
     fold[ifold]->set_reference_epoch (reference_epoch);
   }
+
+  for (unsigned i=0; i < zoom_filterbank.size(); ++i) {
+
+    if (predictor)
+      zoom_filterbank[i]->bin_divider.set_predictor( predictor );
+    else if (fold[0]->has_folding_period())
+      zoom_filterbank[i]->bin_divider.set_folding_period(
+          fold[0]->get_folding_period(),fold[0]->get_reference_epoch());
+    else
+      throw Error (InvalidState, "LoadToFold::prepare",
+          "no predictor / period found for zoom mode");
+  }
+
 
   SingleThread::prepare ();
 

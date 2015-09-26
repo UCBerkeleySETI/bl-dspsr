@@ -60,7 +60,8 @@ namespace dsp {
     void set_predictor (const Pulsar::Predictor*);
 
     //! Use folding period to generate a predictor
-    void set_folding_period (long double folding_period, const MJD& epoch=0);
+    void set_folding_period (long double folding_period, 
+        const MJD& epoch=0.);
 
     //! Get the Pulsar::Predictor used to determine pulse phase
     const Pulsar::Predictor* get_predictor () const { return poly; }

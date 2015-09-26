@@ -72,6 +72,11 @@ void dsp::PhaseLockedFilterbank::set_goal_chan_bw(double chanbw_mhz)
   goal_chan_bw = chanbw_mhz;
 }
 
+void dsp::PhaseLockedFilterbank::set_engine (Engine* _engine)
+{
+  engine = _engine;
+}
+
 template<class T> T sqr (T x) { return x*x; }
 
 void dsp::PhaseLockedFilterbank::prepare ()
@@ -173,7 +178,7 @@ void dsp::PhaseLockedFilterbank::transformation ()
   if (get_output()->get_integration_length() == 0.0) 
   {
 
-    //if (verbose)
+    if (verbose)
       cerr << "dsp::PhaseLockedFilterbank::transformation"
         << " starting new integration" << endl;
 
@@ -197,9 +202,14 @@ void dsp::PhaseLockedFilterbank::transformation ()
           "Invalid npol setting (%d)", npol);
     output->set_rate (input->get_rate() / ndat_fft);
 
+    // MTK -- don't do this because the dspsr centre frequency definition
+    // differs from the psrfits version; here, centre frequency is actually
+    // the band centre frequency, so no half channel ambiguity
     // centre frequency is shifted within original channels by this amt.
+    //get_output()->set_centre_frequency (
+    //    get_input()->get_centre_frequency() + 0.5*input_bandwidth/input_nchan*(1./nchan-1) );
     get_output()->set_centre_frequency (
-        get_input()->get_centre_frequency() + 0.5*input_bandwidth/input_nchan*(1./nchan-1) );
+        get_input()->get_centre_frequency());
 
     if (input_npol < 2 && npol > 1)
       throw Error (InvalidState, "dsp::PhaseLockedFilterbank::transformation",
@@ -211,13 +221,16 @@ void dsp::PhaseLockedFilterbank::transformation ()
 
     get_output()->zero ();
 
+    if (engine)
+      engine->setup_phase_series (get_output());
+
   }
 
   // does this need to be repeated?
   output->set_rate (input->get_rate() / ndat_fft);
 
   // Does it matter when this is done?
-  get_output()->set_folding_predictor( bin_divider.get_predictor() );
+  get_output()->set_folding_predictor ( bin_divider.get_predictor() );
 
   bool first = false;
 
@@ -250,6 +263,9 @@ void dsp::PhaseLockedFilterbank::transformation ()
   float* complex_spectrum[2];
   complex_spectrum[0] = complex_spectrum_dat;
   complex_spectrum[1] = complex_spectrum_dat + (polfac-1) * space_needed;
+
+  if (engine)
+    engine -> prepare (get_input (), ndat_fft);
 
   if (verbose)
     cerr << "dsp::PhaseLockedFilterbank::transformation enter main loop " << endl;
@@ -343,7 +359,7 @@ void dsp::PhaseLockedFilterbank::transformation ()
     if (nblock && remainder)
     {
       nblock ++;
-      block_advance = remainder / (nblock -1);
+      block_advance = (total_ndat - ndat_fft) / (nblock -1);
     }
 
     // if overlapping disabled, set nblock to 0 or 1
@@ -356,24 +372,20 @@ void dsp::PhaseLockedFilterbank::transformation ()
     if ( !(nblock || first_entry) )
       throw Error (InvalidState, "dsp::PhaseLockedFilterbank::transform",
           "No integration blocks found.");
-    //if (nblock==0 && first_entry)
-    //  cerr << "first entry thingy" << endl;
-    //if (new_integration)
-    //  cerr << "new integration nblock="<<nblock << endl;
     // keep track of current block position
     unsigned sample_offset = 0;
 
-    //cerr << "idat_start= " << idat_start << " nblock= " << nblock << " phase_bin=" << phase_bin << endl;
+    if (engine)
+    {
+      engine -> fpt_process (get_input (), nblock, block_advance,
+          phase_bin, idat_start, &total_integrated);
+      first_entry = false;
+    }
+    else
+    {
     for (unsigned iblock = 0; iblock < nblock; iblock++)
     {
-      // make somewhat arbitrary choice of how to assign integration time
-      // to blocks -- by letting the first block contribute all its samples,
-      // works for the case of overlap==false
       unsigned unique_samples = iblock ? block_advance : ndat_fft;
-
-      // Update totals
-      get_output()->get_hits()[phase_bin] ++;
-      get_output()->ndat_total ++;
       total_integrated += time_per_sample * unique_samples;
 
       for (unsigned inchan=0; inchan < input_nchan; inchan++) 
@@ -422,6 +434,11 @@ void dsp::PhaseLockedFilterbank::transformation ()
       sample_offset += block_advance;
 
     } // for each block in time series
+    }
+
+    // update total hits; each block has equal sample weight
+    get_output()->get_hits()[phase_bin] += nblock;
+    get_output()->ndat_total += nblock;
 
     first_entry = false;
   } // for each big fft (ipart)
@@ -437,11 +454,11 @@ void dsp::PhaseLockedFilterbank::transformation ()
   // Check int times
   if (verbose) 
   {
-    MJD span = get_output()->get_end_time() - get_output()->get_start_time();
+    MJD span = get_output()->get_end_time()-get_output()->get_start_time();
     cerr << "dsp::PhaseLockedFilterbank transformation end "
-      << "span=" << span.in_seconds() 
-      << " int=" << get_output()->get_integration_length()
-      << endl;
+         << "span=" << span.in_seconds() 
+         << " int=" << get_output()->get_integration_length()
+         << endl;
   }
 
 }
@@ -491,12 +508,17 @@ void dsp::PhaseLockedFilterbank::reset ()
   Operation::reset();
 
   if (output)
+  {
     output->zero();
+    if (engine)
+      engine->setup_phase_series (output);
+  }
+
 }
 
 void dsp::PhaseLockedFilterbank::finish ()
 {
-  //if (verbose)
+  if (verbose)
     cerr << "dsp::PhaseLockedFilterbank::finish" << endl;
 
 }
@@ -516,4 +538,27 @@ void dsp::PhaseLockedFilterbank::combine (const Operation* other)
 
   if (verbose)
     cerr << "dsp::PhaseLockedFilterbank::combine another PhaseLockedFilterbank exit" << endl;
+}
+
+
+// handle retrieval of phase series results if on device
+dsp::PhaseSeries* dsp::PhaseLockedFilterbank::get_result() const
+{
+  if (verbose)
+    cerr << "dsp::PhaseLockedFilterbank::get_result" << endl;
+
+  cerr<<"ndat_folded="<<output->get_ndat_folded()<<endl;
+  if (engine) 
+  {
+    if (verbose)
+      cerr << "dsp::PhaseLockedFilterbank::get_result syncing with engine"
+           << std::endl;
+    engine->sync_phase_series (output);
+    //output->set_folding_predictor( bin_divider.get_predictor() );
+  }
+  cerr<<"integration length="<<output->get_integration_length()<<endl;
+  cerr<<"nbin="<<output->get_nbin()<<endl;
+  cerr<<"ndat_folded="<<output->get_ndat_folded()<<endl;
+
+  return output;
 }

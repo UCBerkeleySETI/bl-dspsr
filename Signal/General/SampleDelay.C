@@ -21,8 +21,14 @@ dsp::SampleDelay::SampleDelay ()
   zero_delay = 0;
   total_delay = 0;
   built = false;
+  engine = 0;
 
   set_buffering_policy (new InputBuffering (this));
+}
+
+void dsp::SampleDelay::set_engine (Engine* _engine)
+{
+  engine = _engine;
 }
 
 uint64_t dsp::SampleDelay::get_total_delay () const
@@ -158,6 +164,14 @@ void dsp::SampleDelay::transformation ()
 
   uint64_t output_nfloat = output_ndat * input_ndim;
 
+  if (engine)
+  {
+    // TODO -- sanity check FPT, ndim
+    engine->fpt_copy (input, output, zero_delay, output_nfloat, function);
+    function -> mark (output);
+    return;
+  }
+
   for (unsigned ipol=0; ipol < input_npol; ipol++) {
 
     for (unsigned ichan=0; ichan < input_nchan; ichan++) {
@@ -167,11 +181,11 @@ void dsp::SampleDelay::transformation ()
       int64_t applied_delay = 0;
 
       if (zero_delay)
-	// delays are relative to maximum delay
-	applied_delay = zero_delay - function->get_delay(ichan, ipol);
+        // delays are relative to maximum delay
+        applied_delay = zero_delay - function->get_delay(ichan, ipol);
       else
-	// delays are absolute and guaranteed positive
-	applied_delay = function->get_delay(ichan, ipol);
+        // delays are absolute and guaranteed positive
+        applied_delay = function->get_delay(ichan, ipol);
 
       assert (applied_delay >= 0);
 
@@ -185,7 +199,7 @@ void dsp::SampleDelay::transformation ()
       float* out_data = output->get_datptr (ichan, ipol);
 
       for (uint64_t idat=0; idat < output_nfloat; idat++)
-	out_data[idat] = in_data[idat];
+        out_data[idat] = in_data[idat];
 
     }
 
