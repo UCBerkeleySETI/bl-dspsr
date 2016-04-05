@@ -21,6 +21,8 @@ CUDA::FZoomEngine::FZoomEngine(cudaStream_t _stream)
   direction = DeviceToDevice;
 }
 
+// this seems to be deprecated since we automatically detect "kind" in
+// the copy methods
 cudaMemcpyKind CUDA::FZoomEngine::get_kind ()
 {
   cudaMemcpyKind kind;
@@ -55,10 +57,10 @@ void CUDA::FZoomEngine::fpt_copy (
   if ( output -> get_memory() -> on_host () )
     kind = cudaMemcpyDeviceToHost;
 
-  if (stream)
-    cudaStreamSynchronize(stream);
-  else
-    cudaThreadSynchronize();
+  //if (stream)
+  //  cudaStreamSynchronize(stream);
+  //else
+  //  cudaThreadSynchronize();
 
   // if the strides are equal, can do a single copy
   // otherwise, the internal buffers have different reserves and must do
@@ -124,9 +126,8 @@ void CUDA::FZoomEngine::fpt_copy (
     }
   }
 
-  // TODO -- see if this is necessary -- I think so if to host, not sure
-  // about device
-  cudaDeviceSynchronize();
+  if (kind == cudaMemcpyDeviceToHost)
+    cudaDeviceSynchronize();
 
 }
 

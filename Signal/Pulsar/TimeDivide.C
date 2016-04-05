@@ -40,10 +40,13 @@ dsp::TimeDivide::TimeDivide ()
 
   observation = 0;
   division_ndat = 0;
+
+  ff_pred = NULL;
 }
 
 dsp::TimeDivide::~TimeDivide ()
 {
+  delete ff_pred; ff_pred = NULL;
 }
 
 void dsp::TimeDivide::set_start_time (MJD _start_time)
@@ -110,6 +113,16 @@ void dsp::TimeDivide::set_predictor (const Pulsar::Predictor* _poly)
   division_seconds = 0;
 }
 
+void dsp::TimeDivide::set_folding_period (long double folding_period, const MJD& epoch)
+{
+  delete ff_pred;
+  ff_pred = new Pulsar::FixedFrequencyPredictor (1./folding_period);
+  set_predictor (ff_pred);
+  if (&epoch) {
+    ff_pred->set_epoch (epoch);
+  }
+  ff_pred->set_epoch(MJD(55000.));
+}
 
 //! Set the reference phase (phase of bin zero)
 void dsp::TimeDivide::set_reference_phase (double phase)
@@ -151,9 +164,9 @@ void dsp::TimeDivide::set_bounds (const Observation* input)
 
     if (Operation::verbose)
       cerr << "dsp::TimeDivide::bound continue at" 
-	   << "\n        start = " << divide_start
-	   << "\n  current end = " << current_end
-	   << "\n  input start = " << input_start
+	   << "\n        start = " << divide_start.printall()
+	   << "\n  current end = " << current_end.printall()
+	   << "\n  input start = " << input_start.printall()
 	   << endl;
   }
 
@@ -166,22 +179,21 @@ void dsp::TimeDivide::set_bounds (const Observation* input)
     /*
       This state occurs when either:
       1) this method is first called (no boundaries set)
-      2) the 
+      2) the current position is at the edge of or within a new phase bin
     */
 
     if (Operation::verbose)
     {
       cerr << "dsp::TimeDivide::bound start new division" << endl;
       if (input_end < lower)
-        cerr << "      input end = " << input_end << " precedes\n"
-                " division start = " << lower << endl;
+        cerr << "      input end = " << input_end.printall() << " precedes\n"
+                " division start = " << lower.printall() << endl;
        else
-        cerr << "          start = " << divide_start << " is after\n"
-                "   division end = " << upper << endl;
+        cerr << "          start = " << divide_start.printall() << " is after\n"
+                "   division end = " << upper.printall() << endl;
     }
 
     new_division = true;
-
     set_boundaries (divide_start + 0.55/sampling_rate);
   }
 
@@ -189,9 +201,10 @@ void dsp::TimeDivide::set_bounds (const Observation* input)
 
   if (Operation::verbose)
     cerr << "dsp::TimeDivide::bound start division at" 
-	 << "\n          start = " << divide_start
-	 << "\n division start = " << lower
-	 << "\n    input start = " << input_start
+	 << "\n          start = " << divide_start.printall()
+	 << "\n division start = " << lower.printall()
+	 << "\n   division end = " << upper.printall()
+	 << "\n    input start = " << input_start.printall()
 	 << endl;
 
   //////////////////////////////////////////////////////////////////////////
@@ -364,7 +377,7 @@ void dsp::TimeDivide::set_boundaries (const MJD& input_start)
 
     if (Operation::verbose)
       cerr << "dsp::TimeDivide::set_boundaries first call\n\treference_phase="
-           << reference_phase << " start_time=" << start_time << endl;
+           << reference_phase << " start_time=" << start_time.printall() << endl;
 
     start_phase = poly->phase(start_time);
 
@@ -402,6 +415,7 @@ void dsp::TimeDivide::set_boundaries (const MJD& input_start)
 
       // N = (X-R)/D
       unsigned N = (unsigned) ceil (XminusR / division_turns);
+      --N;
 
 #ifdef _DEBUG
       cerr << "NEXT PHASE BIN=" << N << endl;
@@ -433,7 +447,7 @@ void dsp::TimeDivide::set_boundaries (const MJD& input_start)
 
     if (Operation::verbose)
       cerr << "dsp::TimeDivide::set_boundaries first call\n\tstart_phase="
-           << start_phase << " start_time=" << start_time << endl;
+           << start_phase << " start_time=" << start_time.printall() << endl;
   }
 
   MJD divide_start = std::max (start_time, input_start);

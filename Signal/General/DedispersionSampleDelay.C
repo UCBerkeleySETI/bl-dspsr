@@ -65,7 +65,7 @@ bool dsp::Dedispersion::SampleDelay::match (const Observation* obs)
 
     delays[ichan] = int64_t( floor(delay*sampling_rate + 0.5) );
 
-    // cerr << "freq=" << freq << " delay=" << delay*1e3 << " ms = " 
+    // std::cerr << "freq=" << freq << " delay=" << delay*1e3 << " ms = " 
 	 // << delays[ichan] << " samps" << endl;
 
   }

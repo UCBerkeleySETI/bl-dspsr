@@ -30,6 +30,7 @@ Filterbank::Config::Config ()
   nchan = 1;
   freq_res = 0;  // unspecified
   when = After;  // not good, but the original default
+  coherent_dedispersion = true;
 }
 
 std::ostream& dsp::operator << (std::ostream& os,
@@ -54,6 +55,7 @@ std::istream& dsp::operator >> (std::istream& is, Filterbank::Config& config)
 
   config.set_nchan (value);
   config.set_convolve_when (Filterbank::Config::After);
+  config.set_coherent_dedispersion(false);
 
   if (is.eof())
     return is;
@@ -71,11 +73,13 @@ std::istream& dsp::operator >> (std::istream& is, Filterbank::Config& config)
   {
     is.get();  // throw away the D
     config.set_convolve_when (Filterbank::Config::During);
+    config.set_coherent_dedispersion(true);
   }
   else if (is.peek() == 'B' || is.peek() == 'b')
   {
     is.get();  // throw away the B
     config.set_convolve_when (Filterbank::Config::Before);
+    config.set_coherent_dedispersion(true);
   }
   else
   {

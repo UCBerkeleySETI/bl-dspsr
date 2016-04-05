@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <iostream>
-#include <cstdio>
+#include <stdio.h>
 
 using namespace std;
 

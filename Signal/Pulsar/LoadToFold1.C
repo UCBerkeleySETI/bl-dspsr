@@ -48,10 +48,14 @@
 #include "dsp/MemoryCUDA.h"
 #include "dsp/SKMaskerCUDA.h"
 #include "dsp/CyclicFoldEngineCUDA.h"
+#include "dsp/FZoomCUDA.h"
+#include "dsp/SampleDelayCUDA.h"
+#include "dsp/PhaseLockedFilterbankCUDA.h"
 #endif
 
 #include "dsp/SampleDelay.h"
 #include "dsp/PhaseLockedFilterbank.h"
+#include "dsp/FZoom.h"
 #include "dsp/Detection.h"
 #include "dsp/FourthMoment.h"
 #include "dsp/Stats.h"
@@ -110,6 +114,25 @@ unsigned count (const std::vector<T>& data, T element)
   return c;
 }
 
+void parse_zoom_conf (string zoom_conf,double* centre_frequency,
+      double* bandwidth, double* chan_bw) {
+  // parse out configuration, format: freq[,bw[,chan_bw]]
+  // e.g. 1420.4    1420.4,5    1420.4,5,0.002
+  string::size_type n = zoom_conf.find(",");
+  if ( n == string::npos ) {
+    throw Error (InvalidParam, "LoadToFold::parse_zoom_conf",
+        "must specify at least centre frequency for zoom mode");
+  }
+  *centre_frequency = strtod(zoom_conf.substr(0,n).c_str(),NULL);
+  zoom_conf = zoom_conf.substr(n+1);
+  if (n==string::npos || !zoom_conf.length()) return;
+  n = zoom_conf.find(",");
+  *bandwidth = strtod(zoom_conf.substr(0,n).c_str(),NULL);
+  zoom_conf = zoom_conf.substr(n+1);
+  if (n==string::npos || !zoom_conf.length()) return;
+  *chan_bw = strtod(zoom_conf.c_str(),NULL); 
+}
+
 void dsp::LoadToFold::construct () try
 {
   SingleThread::construct ();
@@ -118,6 +141,9 @@ void dsp::LoadToFold::construct () try
   bool run_on_gpu = thread_id < config->get_cuda_ndevice();
   cudaStream_t stream = reinterpret_cast<cudaStream_t>( gpu_stream );
 #endif
+
+  // make filterbank configruation consistent
+  config->coherent_dedispersion = config->filterbank.get_coherent_dedispersion();
 
   if (manager->get_info()->get_detected())
   {
@@ -470,7 +496,8 @@ void dsp::LoadToFold::construct () try
     if (!phased_filterbank->has_output())
       phased_filterbank->set_output (new PhaseSeries);
 
-    phased_filterbank->bin_divider.set_reference_phase(config->reference_phase);
+    phased_filterbank->bin_divider.set_reference_phase(
+        config->reference_phase);
 
     // Make dummy fold instance so that polycos get created
     fold.resize(1);
@@ -492,6 +519,113 @@ void dsp::LoadToFold::construct () try
     return;
     // the phase-locked filterbank does its own detection and folding
     
+  }
+
+  // Set up zoom mode filterbanks
+  if (config -> zooms.size())
+  {
+    // Set up zoom transformations, delays, etc.
+    zoom_filterbank.resize (config -> zooms.size());
+
+    for (unsigned i=0; i < config -> zooms.size(); ++i) {
+
+      double zoom_bw = 1; // default 1 MHz bandwidth
+      double chan_bw = 0.002; // default 2 kHz channels
+      double centre_freq = manager->get_info()->get_centre_frequency();
+      unsigned max_nbin = 128; // TODO -- make this an option
+      parse_zoom_conf(config->zooms[i],&centre_freq,&zoom_bw,&chan_bw);
+
+      //if (Operation::verbose)
+        cerr << "Setting up zoom " << i+1 
+             << " with zoom_bw=" << zoom_bw << " chan_bw=" << chan_bw
+             << " about centre frequency=" << centre_freq << endl;
+
+      // transformation to coarse zoom
+      Reference::To<FZoom> fzoom = new FZoom;
+      fzoom->set_centre_frequency (centre_freq);
+      fzoom->set_bandwidth (zoom_bw);
+      fzoom->set_input (convolved);
+      fzoom->set_output (new_time_series());
+#if HAVE_CUDA
+      if (run_on_gpu)
+      {
+        fzoom->get_output()->set_memory (device_memory);
+        fzoom->set_engine (new CUDA::FZoomEngine (stream) );
+      }
+#endif
+      operations.push_back ( fzoom.get() );
+
+      // in-place removal of channel delays
+      TimeSeries* sample_delay_input = fzoom->get_output();
+      SampleDelay* zoom_delay = new SampleDelay;
+      zoom_delay->set_input (sample_delay_input);
+      zoom_delay->set_output (sample_delay_input);
+      zoom_delay->set_function (new Dedispersion::SampleDelay);
+      if (kernel)
+        kernel->set_fractional_delay (true);
+#if HAVE_CUDA
+      if (run_on_gpu)
+      {
+        zoom_delay->set_engine (new CUDA::SampleDelayEngine (stream) );
+      }
+#endif
+      operations.push_back (zoom_delay);
+
+      // Set up output
+      PhaseSeriesUnloader* archiver = get_unloader (i,true);
+      char label[7+1];
+      sprintf(label,".zoom%02d",i);
+      archiver->set_extension(label);
+
+
+      if (output_subints()) 
+      {
+        cerr << "setting up zoom subints" << endl;
+        Subint<PhaseLockedFilterbank> *sub_plfb = 
+          new Subint<PhaseLockedFilterbank>;
+
+        if (config->integration_length)
+          sub_plfb->set_subint_seconds (config->integration_length);
+
+        else if (config->integration_turns) 
+        {
+          sub_plfb->set_subint_turns (config->integration_turns);
+          sub_plfb->set_fractional_pulses (config->fractional_pulses);
+        }
+
+        sub_plfb->set_unloader (zoom_unloader[i]);
+        zoom_filterbank[i] = sub_plfb;
+      }
+      else
+        zoom_filterbank[i] = new PhaseLockedFilterbank;
+
+      zoom_filterbank[i]->set_nbin (max_nbin); // maximum phase bins
+      zoom_filterbank[i]->set_npol (config->npol);
+      zoom_filterbank[i]->set_goal_chan_bw (chan_bw);
+      //zoom_filterbank[i]->set_input (fzoom->get_output());
+#ifdef HAVE_CUDA
+      if (run_on_gpu)
+        zoom_filterbank[i]->set_engine (
+            new CUDA::PhaseLockedFilterbankEngine (stream) );
+#endif
+      zoom_filterbank[i]->set_input (zoom_delay->get_output());
+
+      // store a reference to zoom for later fine tuning
+      zoom_filterbank[i]->set_zoom( fzoom.get() );
+
+      if (!zoom_filterbank[i]->has_output())
+        zoom_filterbank[i]->set_output (new PhaseSeries);
+
+      zoom_filterbank[i]->bin_divider.set_reference_phase(
+          config->reference_phase);
+
+      operations.push_back (zoom_filterbank[i].get());
+
+    }
+    // NB -- there is still work, wild work to be done
+    // After the Fold(s) are set up below, use the predictors to
+    // set the bin divider and to choose the number of channels to
+    // satisfy the requested zoom configuration
   }
 
   Reference::To<Fold> presk_fold;
@@ -800,13 +934,26 @@ void dsp::LoadToFold::prepare ()
       extensions->add_extension( path[ifold] );
     
       for (unsigned iop=0; iop < operations.size(); iop++)
-	operations[iop]->add_extensions (extensions);
+	      operations[iop]->add_extensions (extensions);
     
       fold[ifold]->get_output()->set_extensions (extensions);
     }
 
     fold[ifold]->set_reference_epoch (fold_reference_epoch);
   }
+
+  for (unsigned i=0; i < zoom_filterbank.size(); ++i) {
+
+    if (predictor)
+      zoom_filterbank[i]->bin_divider.set_predictor( predictor );
+    else if (fold[0]->has_folding_period())
+      zoom_filterbank[i]->bin_divider.set_folding_period(
+          fold[0]->get_folding_period(),fold[0]->get_reference_epoch());
+    else
+      throw Error (InvalidState, "LoadToFold::prepare",
+          "no predictor / period found for zoom mode");
+  }
+
 
   SingleThread::prepare ();
 
@@ -831,7 +978,7 @@ void dsp::LoadToFold::prepare ()
 
       if (config->coherent_dedispersion &&
 	  config->filterbank.get_convolve_when() == Filterbank::Config::During)
-	cerr << "dedispersing ";
+	      cerr << "dedispersing ";
       else if (filterbank->get_freq_res() > 1)
         cerr << "by " << filterbank->get_freq_res() << " back ";
 
@@ -930,7 +1077,7 @@ void dsp::LoadToFold::end_of_data ()
 {
   // ensure that remaining threads are not left waiting
   for (unsigned ifold=0; ifold < fold.size(); ifold++)
-    fold[ifold]->finish();
+    fold[ifold]->finish ();
 }
 
 void setup (dsp::Fold* fold)
@@ -994,7 +1141,7 @@ void dsp::LoadToFold::build_fold (TimeSeries* to_fold)
 
   fold.resize (nfold);
   path.resize (nfold);
-  unloader.resize (nfold);
+  //unloader.resize (nfold);
 
   if (config->asynchronous_fold)
     asynch_fold.resize( nfold );
@@ -1016,22 +1163,29 @@ void dsp::LoadToFold::build_fold (TimeSeries* to_fold)
 }
 
 dsp::PhaseSeriesUnloader* 
-dsp::LoadToFold::get_unloader (unsigned ifold)
+dsp::LoadToFold::get_unloader (unsigned ifold, bool zoom)
 {
-  if (ifold == unloader.size())
-    unloader.push_back( NULL );
 
-  if (!unloader.at(ifold))
+  std::vector<Reference::To<PhaseSeriesUnloader> >& m_unloader = 
+    zoom ? zoom_unloader : unloader;
+
+  if (ifold == m_unloader.size())
+    m_unloader.push_back( NULL );
+
+  if (!m_unloader.at(ifold))
   {
     if (Operation::verbose)
       cerr << "dsp::LoadToFold::get_unloader prepare new Archiver" << endl;
 
     Archiver* archiver = new Archiver;
-    unloader[ifold] = archiver;
+    m_unloader[ifold] = archiver;
     prepare_archiver( archiver );
+    // zoom mode always removes sample delays
+    if (zoom)
+      archiver->set_archive_dedispersed (true);
   }
 
-  return unloader.at(ifold);
+  return m_unloader.at(ifold);
 }
 
 void dsp::LoadToFold::build_fold (Reference::To<Fold>& fold,
@@ -1046,7 +1200,7 @@ void dsp::LoadToFold::build_fold (Reference::To<Fold>& fold,
     if (config->cyclic_nchan)
     {
       if (Operation::verbose)
-	cerr << "dsp::LoadToFold::build_fold prepare CyclicFold" << endl;
+	      cerr << "dsp::LoadToFold::build_fold prepare CyclicFold" << endl;
       
       CyclicFold* cs = new CyclicFold;
       cs -> set_mover (config->cyclic_mover);
@@ -1058,7 +1212,7 @@ void dsp::LoadToFold::build_fold (Reference::To<Fold>& fold,
     else
     {
       if (Operation::verbose)
-	cerr << "dsp::LoadToFold::build_fold prepare Fold" << endl;
+	      cerr << "dsp::LoadToFold::build_fold prepare Fold" << endl;
 
       fold = new Fold;
     }
@@ -1288,7 +1442,6 @@ void dsp::LoadToFold::configure_fold (unsigned ifold, TimeSeries* to_fold)
 #endif
 }
 
-
 void dsp::LoadToFold::prepare_archiver( Archiver* archiver )
 {
   bool multiple_outputs = output_subints()
@@ -1452,8 +1605,29 @@ void dsp::LoadToFold::finish () try
 {
   if (phased_filterbank)
   {
-    cerr << "Calling PhaseLockedFilterbank::normalize_output" << endl;
+    if (Operation::verbose)
+      cerr << "Calling PhaseLockedFilterbank::normalize_output" << endl;
     phased_filterbank -> normalize_output ();
+  }
+
+  for (unsigned i=0; i < zoom_filterbank.size(); ++i) {
+    if (Operation::verbose)
+      cerr << "Fine-tuning PhaseLockedFilterbank channels " << i+1 << endl;
+    // apply additional zoom by trimming channels outside of band
+    Reference::To<FZoom> fzoom = zoom_filterbank[i]->get_zoom ();
+    //if ( fzoom ) {
+    if ( false ) {
+      fzoom->set_input(zoom_filterbank[i]->get_output());
+      fzoom->set_output(zoom_filterbank[i]->get_output());
+      fzoom->operate();
+    }
+    if (Operation::verbose)
+      cerr << "Calling PhaseLockedFilterbank::normalize_output "<< i+1<< endl;
+    zoom_filterbank[i]->normalize_output();
+    // write out archives -- does nothing if not doing subints
+    if (Operation::verbose)
+      cerr << "Writing out zoom-mode filterbank "<<i+1 << endl;
+    zoom_filterbank[i]->finish();
   }
 
   SingleThread::finish();
@@ -1463,9 +1637,24 @@ void dsp::LoadToFold::finish () try
     if (!unloader.size())
       throw Error (InvalidState, "dsp::LoadToFold::finish", "no unloader");
 
+    // short circuit unloading if single phase filterbank
+    if (phased_filterbank) {
+      Archiver* archiver = dynamic_cast<Archiver*>( unloader[0].get() );
+      archiver->unload( phased_filterbank->get_result() );
+      return;
+    }
+
+    // unload zoom filterbanks, whose unloaders precede fold unloaders
+    for (unsigned i=0; i < zoom_filterbank.size(); ++i) {
+      if (Operation::verbose)
+        cerr << "Creating zoom archive " << i+1 << endl;
+      Archiver* archiver = dynamic_cast<Archiver*>(zoom_unloader[i].get());
+      archiver->unload ( zoom_filterbank[i]->get_result() );
+    }
+
     for (unsigned i=0; i<fold.size(); i++)
     {
-      Archiver* archiver = dynamic_cast<Archiver*>( unloader[0].get() );
+      Archiver* archiver = dynamic_cast<Archiver*>( unloader[i].get() );
       if (!archiver)
         throw Error (InvalidState, "dsp::LoadToFold::finish",
                      "unloader is not an archiver (single integration)");
@@ -1477,12 +1666,9 @@ void dsp::LoadToFold::finish () try
       */
 
       if (Operation::verbose)
-        cerr << "Creating archive " << i+1 << endl;
+        cerr << "Creating fold archive " << i+1 << endl;
 
-      if (phased_filterbank)
-        archiver->unload( phased_filterbank->get_output() );
-      else
-        archiver->unload( fold[i]->get_result() );
+      archiver->unload( fold[i]->get_result() );
 
     }
   }

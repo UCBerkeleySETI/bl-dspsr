@@ -277,7 +277,6 @@ void dsp::PhaseSeries::copy_attributes (const PhaseSeries* copy)
   integration_length = copy->integration_length;
   ndat_total         = copy->ndat_total;
   ndat_expected      = copy->ndat_expected;
-
   end_time           = copy->end_time;
   folding_period     = copy->folding_period;
 

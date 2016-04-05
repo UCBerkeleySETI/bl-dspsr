@@ -106,6 +106,8 @@ namespace dsp
     //! Set the reference epoch that defines phase = 0 when folding_period > 0
     void set_reference_epoch (const MJD&);
 
+    const MJD& get_reference_epoch() {return reference_epoch;}
+
     //! Get the period at which data are being folded (in seconds)
     double get_folding_period () const;
 
@@ -265,7 +267,7 @@ namespace dsp
     virtual uint64_t set_bins (double phi, double phase_per_sample, uint64_t _ndat, uint64_t idat_start)=0;
     // Set this property true to use set_bins instead of set_bin
     bool use_set_bins;
-    // fuction used when set_bins is used to update the number of hits in each bin
+    // function used when set_bins is used to update the number of hits in each bin
     virtual uint64_t get_bin_hits (int ibin)=0;
 
     //! Return the number of time samples folded
