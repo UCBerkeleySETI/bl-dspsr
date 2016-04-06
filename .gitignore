@@ -11,6 +11,7 @@ Makefile.in
 Makefile *.o
 Kernel/Applications/Makefile
 Kernel/Applications/load_bits
+Kernel/Applications/digihdr
 Kernel/Classes/Makefile
 Kernel/Formats/Makefile
 Kernel/Formats/apsr/Makefile
@@ -110,6 +111,7 @@ local_include/
 python/dspsr.py
 python/dspsr_wrap.cxx
 stamp-h1
+tags
 update.log
 Documentation/doxygen.err
 Documentation/doxygen.out
