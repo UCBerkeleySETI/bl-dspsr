@@ -48,6 +48,8 @@ int get_header(int fd, char **hdr) {
   const int max_cards = 2304;
   int count=0;
   bool got_end=false;
+  int direct_io=0;
+
   while (count<max_cards && !got_end) {
 
     // Read next card
@@ -77,6 +79,11 @@ int get_header(int fd, char **hdr) {
     free(*hdr);
     *hdr = NULL;
     return 0;
+  }
+
+  hget(*hdr, "DIRECTIO", &direct_io);
+  if (direct_io) {
+    lseek(fd, ((1<<30) - (cs*count)) % 512, SEEK_CUR);
   }
 
   return count;
@@ -140,6 +147,14 @@ void dsp::GUPPIFile::open_file (const char* filename)
   // Parse header into info struct
   parse_header();
 
+  int hdrsize = 80*hdr_keys;
+  int direct_io = 0;
+  hget(hdr, "DIRECTIO", &direct_io);
+  if (direct_io) {
+    // Round up to next multiple of 512
+    hdrsize = ((hdrsize + 511) / 512) * 512;
+  }
+
   // Figure out total size
   // dfac thing accounts for some weirdness in definition of 
   // OVERLAP for real-sampled TDOM data..
@@ -148,7 +163,7 @@ void dsp::GUPPIFile::open_file (const char* filename)
   if (rv < 0)
     throw Error (FailedSys, "dsp::GUPPIFile::open_file",
         "fstat(%s) failed", filename);
-  uint64_t full_block_size = blocsize + 80*hdr_keys;
+  uint64_t full_block_size = hdrsize + blocsize;
   uint64_t nblocks = buf.st_size / full_block_size;
   unsigned int dfac = get_info()->get_ndim()==1 ? 2 : 1;
   get_info()->set_ndat( get_info()->get_nsamples(nblocks*blocsize) - dfac*overlap*nblocks );
