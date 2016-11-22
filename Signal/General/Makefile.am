@@ -40,6 +40,8 @@ libdspdsp_la_SOURCES = optimize_fft.c cross_detect.c cross_detect.h  \
 	SingleThread.C MultiThread.C dsp_verbosity.C \
 	PolnSelect.C PolnReshape.C
 
+libdspdsp_la_LIBADD =
+
 if HAVE_CUFFT
 
 nobase_include_HEADERS += CUFFTError.h dsp/LaunchConfig.h \
@@ -75,7 +77,7 @@ if HAVE_PGPLOT
   #
 
   libdspdsp_la_SOURCES += ExcisionStatsPlotter.C BitStatsPlotter.C
-  libdspdsp_la_LIBADD = @PGPLOT_LIBS@
+  libdspdsp_la_LIBADD += @PGPLOT_LIBS@
   bin_PROGRAMS += digistat passband
 
   digistat_SOURCES = digistat.C
@@ -99,7 +101,7 @@ if HAVE_fits
   #
 
   nobase_include_HEADERS += dsp/LoadToFITS.h dsp/LoadToFITSN.h
-  libdspdsp_la_LIBADD = @CFITSIO_LIBS@
+  libdspdsp_la_LIBADD += @CFITSIO_LIBS@
   libdspdsp_la_SOURCES += LoadToFITS.C LoadToFITSN.C
 
   bin_PROGRAMS += digifits
