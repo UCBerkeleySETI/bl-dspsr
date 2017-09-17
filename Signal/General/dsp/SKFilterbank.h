@@ -6,10 +6,7 @@
  *
  ***************************************************************************/
 
-/* $Source: /cvsroot/dspsr/dspsr/Signal/General/dsp/SKFilterbank.h,v $
-   $Revision: 1.2 $
-   $Date: 2011/08/04 21:06:12 $
-   $Author: straten $ */
+// dspsr/Signal/General/dsp/SKFilterbank.h
 
 #ifndef __SKFilterbank_h
 #define __SKFilterbank_h
@@ -27,7 +24,7 @@ namespace dsp {
   public:
 
     //! Null constructor
-    SKFilterbank ( unsigned _n_threads );
+    SKFilterbank ( unsigned _n_threads=1 );
     ~SKFilterbank ();
 
     //! Engine used to perform discrete convolution step
@@ -107,7 +104,14 @@ namespace dsp {
   class SKFilterbank::Engine : public Reference::Able
   {
   public:
-      Engine () {}
+
+      virtual void setup () = 0;
+
+      virtual void prepare (const dsp::TimeSeries* input, unsigned _nfft) = 0;
+
+      virtual void perform (const dsp::TimeSeries* input, dsp::TimeSeries* output,
+                            dsp::TimeSeries *output_tscr) = 0;
+
   }; 
 }
 

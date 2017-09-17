@@ -6,10 +6,7 @@
  *
  ***************************************************************************/
 
-/* $Source: /cvsroot/dspsr/dspsr/Kernel/Classes/dsp/MultiFile.h,v $
-   $Revision: 1.29 $
-   $Date: 2011/09/20 20:20:31 $
-   $Author: straten $ */
+// dspsr/Kernel/Classes/dsp/MultiFile.h
 
 
 #ifndef __MultiFile_h
@@ -50,6 +47,9 @@ namespace dsp {
     //! Retrieve a pointer to the loader File instance
     File* get_loader ();
     const File* get_loader () const;
+
+    //! Access to current file objects
+    std::vector< Reference::To<File> >& get_files () {return files;}
 
     //! Return true if the loader File instance is set
     bool has_loader ();

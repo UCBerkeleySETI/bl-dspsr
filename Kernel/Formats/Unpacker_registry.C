@@ -60,6 +60,11 @@ static dsp::Unpacker::Register::Enter<dsp::BPSRCrossUnpacker> bpsrcross;
 static dsp::Unpacker::Register::Enter<dsp::CASPSRUnpacker> caspsr;
 #endif
 
+#if HAVE_ska1
+#include "dsp/SKA1Unpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::SKA1Unpacker> ska1;
+#endif
+
 #if HAVE_cpsr
 #include "dsp/CPSRTwoBitCorrection.h"
 static dsp::Unpacker::Register::Enter<dsp::CPSRTwoBitCorrection> cpsr;
@@ -104,7 +109,9 @@ static dsp::Unpacker::Register::Enter<dsp::GUPPITwoBitCorrection> guppi2;
 
 #if HAVE_kat
 #include "dsp/KAT7Unpacker.h"
+#include "dsp/MeerKATUnpacker.h"
 static dsp::Unpacker::Register::Enter<dsp::KAT7Unpacker> kat7;
+static dsp::Unpacker::Register::Enter<dsp::MeerKATUnpacker> meerkat;
 #endif
 
 #if HAVE_lofar_dal
@@ -149,6 +156,11 @@ static dsp::Unpacker::Register::Enter<dsp::Mark5Unpacker> mark5_general;
 static dsp::Unpacker::Register::Enter<dsp::Mark5TwoBitCorrection> mark5;
 #endif
 
+#if HAVE_mark5b
+#include "dsp/Mark5bUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::Mark5bUnpacker> mark5b;
+#endif
+
 #if HAVE_maxim
 #include "dsp/MaximUnpacker.h"
 static dsp::Unpacker::Register::Enter<dsp::MaximUnpacker> maxim;
@@ -159,8 +171,14 @@ static dsp::Unpacker::Register::Enter<dsp::MaximUnpacker> maxim;
 static dsp::Unpacker::Register::Enter<dsp::MiniUnpack> miniunpack;
 #endif
 
+#if HAVE_mopsr
+#include "dsp/MOPSRUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::MOPSRUnpacker> mopsr;
+#endif
+
 #if HAVE_mwa
-// There is no MWA unpacker checked into the repository
+#include "dsp/EDAFourBit.h"
+static dsp::Unpacker::Register::Enter<dsp::EDAFourBit> eda4bit;
 #endif
 
 #if HAVE_pmdaq
@@ -200,11 +218,19 @@ static dsp::Unpacker::Register::Enter<dsp::GUPPIFITSUnpacker> guppifits;
 static dsp::Unpacker::Register::Enter<dsp::FITSUnpacker> fits;
 #endif
 
+
+#if HAVE_emerlin
+#include "dsp/EmerlinUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::EmerlinUnpacker> emerlin;
+#endif
+
 #if HAVE_vdif
 #include "dsp/VDIFTwoBitCorrection.h"
 static dsp::Unpacker::Register::Enter<dsp::VDIFTwoBitCorrection> vdif;
 #include "dsp/VDIFTwoBitCorrectionMulti.h"
 static dsp::Unpacker::Register::Enter<dsp::VDIFTwoBitCorrectionMulti> vdif_multi;
+#include "dsp/VDIFFourBitUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::VDIFFourBitUnpacker> vdif4;
 #include "dsp/VDIFEightBitUnpacker.h"
 static dsp::Unpacker::Register::Enter<dsp::VDIFEightBitUnpacker> vdif8;
 #endif
@@ -253,9 +279,17 @@ static dsp::Unpacker::Register::Enter<dsp::K5TwoBitCorrection>  k5;
 static dsp::Unpacker::Register::Enter<dsp::GenericEightBitUnpacker> gen8bit;
 
 /*
+  Generic four-bit unpacker is used if no other four-bit unpacker steps up
+*/
+
+#include "dsp/GenericFourBitUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::GenericFourBitUnpacker> gen4bit;
+
+/*
   get_registry is defined here to ensure that this file is linked
 */
 dsp::Unpacker::Register& dsp::Unpacker::get_register()
 {
   return Register::get_registry();
 }
+

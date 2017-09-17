@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([DSPSR],[2.0],[dspsr-developers@lists.sourceforge.net])
+AC_INIT([DSPSR],[2016-06+],[dspsr-developers@lists.sourceforge.net])
 
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([Kernel/Makefile.am])
@@ -56,6 +56,8 @@ AC_PROG_CC
 AC_PROG_CPP
 AM_PROG_CC_C_O
 
+AC_PROG_F77
+
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
@@ -89,6 +91,7 @@ SWIN_LIB_CFITSIO
 SWIN_LIB_MPI
 SWIN_LIB_CUDA
 SWIN_LIB_GUPPI_DAQ
+SWIN_LIB_MARK5ACCESS
 
 AX_OPENMP
 AC_SUBST(OPENMP_CFLAGS)
@@ -114,6 +117,9 @@ MJK_LIB_CRYPTO
 
 # Check for psrxml io library
 MJK_LIB_PSRXML
+
+# find HDF5 (needed for LOFAR)
+AX_HDF5
 
 #
 # Checks for library functions.
@@ -160,6 +166,7 @@ AC_CONFIG_FILES([Makefile
 		Kernel/Formats/cpsr2/Makefile
 		Kernel/Formats/dada/Makefile
 		Kernel/Formats/dummy/Makefile
+		Kernel/Formats/emerlin/Makefile
 		Kernel/Formats/fadc/Makefile
         	Kernel/Formats/fits/Makefile
 		Kernel/Formats/gmrt/Makefile
@@ -173,7 +180,9 @@ AC_CONFIG_FILES([Makefile
 		Kernel/Formats/spda1k/Makefile
 		Kernel/Formats/mark4/Makefile
 		Kernel/Formats/mark5/Makefile
+		Kernel/Formats/mark5b/Makefile
 		Kernel/Formats/maxim/Makefile
+		Kernel/Formats/mopsr/Makefile
 		Kernel/Formats/mwa/Makefile
 		Kernel/Formats/pmdaq/Makefile
 		Kernel/Formats/pdev/Makefile
@@ -181,6 +190,7 @@ AC_CONFIG_FILES([Makefile
 		Kernel/Formats/puma2/Makefile
 		Kernel/Formats/s2/Makefile
 		Kernel/Formats/sigproc/Makefile
+		Kernel/Formats/ska1/Makefile
 		Kernel/Formats/spigot/Makefile
 		Kernel/Formats/vdif/Makefile
 		Kernel/Formats/wapp/Makefile
