@@ -356,10 +356,9 @@ int tci_file_hdr_init  (tci_hdr *header)
 {
   int i;
   
+  memset(header, ' ', sizeof(*header));
   header->hdr_size = 0;
   header->hdr_drate = 0;
-  sprintf (header->hdr_time, "%-*.*s", (TCI_HEADER_BASE_SIZE-6),
-	   (TCI_HEADER_BASE_SIZE-6), " ");
   header->hdr_time[0] = '\0';
   header->hdr_s2mode[0] = '\0';
   header->hdr_tapeid[0] = '\0';
