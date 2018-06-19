@@ -20,10 +20,10 @@
 #include <inttypes.h>
 
 /* more convenient when parsing */
-#define I32  "%"PRIi32
-#define UI32 "%"PRIu32
+#define I32  "%" PRIi32
+#define UI32 "%" PRIu32
 
-#define I64  "%"PRIi64
-#define UI64 "%"PRIu64
+#define I64  "%" PRIi64
+#define UI64 "%" PRIu64
 
 #endif /* ENVIRON_H */
