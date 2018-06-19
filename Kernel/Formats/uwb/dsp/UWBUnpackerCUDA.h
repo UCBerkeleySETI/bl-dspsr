@@ -1,26 +1,25 @@
+//-*-C++-*-
 /***************************************************************************
  *
- *   Copyright (C) 2015 by Andrew Jameson
+ *   Copyright (C) 2014 by Andrew JAmeson
  *   Licensed under the Academic Free License version 2.1
  *
  ***************************************************************************/
 
-#ifndef __dsp_MeerKATUnpackerCUDA_h
-#define __dsp_MeerKATUnpackerCUDA_h
+#ifndef __baseband_cuda_UWBUnpacker_h
+#define __baseband_cuda_UWBUnpacker_h
 
-#include "dsp/MeerKATUnpacker.h"
-
+#include "dsp/UWBUnpacker.h"
 #include <cuda_runtime.h>
 
 namespace CUDA
 {
-
-  class MeerKATUnpackerEngine : public dsp::MeerKATUnpacker::Engine
+  class UWBUnpackerEngine : public dsp::UWBUnpacker::Engine
   {
   public:
 
     //! Default Constructor
-    MeerKATUnpackerEngine (cudaStream_t stream);
+    UWBUnpackerEngine (cudaStream_t stream);
 
     void setup ();
 
@@ -28,7 +27,7 @@ namespace CUDA
 
     void set_device (dsp::Memory* memory);
 
-    void unpack (float scale, const dsp::BitSeries * input, dsp::TimeSeries * output, unsigned sample_swap);
+    void unpack (const dsp::BitSeries * input, dsp::TimeSeries * output);
 
   protected:
 
@@ -38,8 +37,9 @@ namespace CUDA
 
     dsp::BitSeries staging;
 
+    bool first_block;
+
   };
 }
-
 
 #endif
