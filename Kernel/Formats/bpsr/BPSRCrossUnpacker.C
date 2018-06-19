@@ -178,8 +178,12 @@ void dsp::BPSRCrossUnpacker::unpack ()
     gain_pol1 /= ppqq_bw_scale;
     gain_pol2 /= ppqq_bw_scale;
 
-    float p_scale = reference_gain/gain_pol1;
-    float q_scale = reference_gain/gain_pol2;
+    float p_scale = 0;
+    float q_scale = 0;
+    if (gain_pol1 > 0)
+      p_scale = reference_gain/gain_pol1;
+    if (gain_pol2 > 0)
+      q_scale = reference_gain/gain_pol2;
 
     ppqq_scale[0] = p_scale * p_scale;
     ppqq_scale[1] = q_scale * q_scale;
