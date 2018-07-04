@@ -103,7 +103,9 @@ void dsp::FITSUnpacker::unpack()
   // Make sure scales and offsets exist
   if (dat_scl.size() == 0)
   {
+#if _DEBUG
     cerr << "dsp::FITSUnpacker::unpack dat_scl empty" << endl;
+#endif
     dat_scl.assign(nchan,1);
     dat_offs.assign(nchan,0);
   }
