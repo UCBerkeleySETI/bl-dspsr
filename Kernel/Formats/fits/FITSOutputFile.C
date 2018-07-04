@@ -434,7 +434,7 @@ void dsp::FITSOutputFile::initialize ()
   // TODO -- will need to fix this later on
   psrfits_update_key<int> (fptr, "NSUBOFFS", 0);
 
-  max_bytes = max_length*get_input()->get_rate() / (8/nbit) * nchan * npol;
+  max_bytes = rint(max_length*get_input()->get_rate() / (8/nbit) * nchan * npol);
   if ( max_bytes && (max_bytes < nbblk) )
     throw Error (InvalidState, "must set maximum file size > data block size (1 FITS row)" );
   if ( max_bytes && (max_bytes % nbblk != 0))
@@ -559,6 +559,8 @@ void dsp::FITSOutputFile::finalize_fits ()
     int nstot = (written*8)/(npol * nchan * nbit);
     psrfits_update_key<int> (fptr, "NSTOT", nstot );
     int nsuboffs = samples_written/nsblk - written/nbblk;
+    if (nsuboffs == -1)
+      nsuboffs = 0;
     psrfits_update_key<int> (fptr, "NSUBOFFS", nsuboffs);
     int status = 0;
     fits_close_file(fptr, &status);
