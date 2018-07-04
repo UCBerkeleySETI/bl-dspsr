@@ -106,8 +106,8 @@ void dsp::FITSUnpacker::unpack()
 #if _DEBUG
     cerr << "dsp::FITSUnpacker::unpack dat_scl empty" << endl;
 #endif
-    dat_scl.assign(nchan,1);
-    dat_offs.assign(nchan,0);
+    dat_scl.assign(nchan*npol,1);
+    dat_offs.assign(nchan*npol,0);
   }
 
   // Number of samples in one byte.
