@@ -236,6 +236,9 @@ void parse_options (int argc, char** argv) try
     ("specify either the floating point number of megabytes; e.g. -U 256 \n"
      "or a multiple of the minimum possible block size; e.g. -U minX2 \n");
 
+  arg = menu.add (config->apply_FITS_scale_and_offset, "scloffs");
+  arg->set_help ("denormalize using DAT_SCL and DAT_OFFS [PSRFITS]");
+   
   /* ***********************************************************************
 
   Source Options
