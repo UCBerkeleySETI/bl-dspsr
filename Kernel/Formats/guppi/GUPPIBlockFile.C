@@ -82,7 +82,6 @@ void dsp::GUPPIBlockFile::parse_header()
     get_info()->set_state(Signal::Nyquist);
 
   // Any format-specific checks
-  int packet_factor = 1;
   header_get_check("PKTFMT", ctmp);
   header_get_check("PKTSIZE",  &packet_size);
   if (string(ctmp) == "VDIF") 
@@ -91,7 +90,7 @@ void dsp::GUPPIBlockFile::parse_header()
     signed_8bit = false;
     // Assume 2-pol VDIF used two streams, this will correct
     // packets per block later.
-    if (get_info()->get_npol()==2) { packet_factor = 2; }
+    if (get_info()->get_npol()==2) { packet_size *= 2; }
   } 
   else if (string(ctmp) == "1SFA") 
   {
