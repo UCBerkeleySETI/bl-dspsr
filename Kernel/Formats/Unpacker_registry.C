@@ -295,6 +295,14 @@ static dsp::Unpacker::Register::Enter<dsp::GenericEightBitUnpacker> gen8bit;
 static dsp::Unpacker::Register::Enter<dsp::GenericFourBitUnpacker> gen4bit;
 
 /*
+  Generic two-bit unpacker is used if no other two-bit unpacker steps up
+*/
+
+#include "dsp/GenericTwoBitCorrection.h"
+static dsp::Unpacker::Register::Enter<dsp::GenericTwoBitCorrection> gen2bit;
+
+
+/*
   get_registry is defined here to ensure that this file is linked
 */
 dsp::Unpacker::Register& dsp::Unpacker::get_register()
