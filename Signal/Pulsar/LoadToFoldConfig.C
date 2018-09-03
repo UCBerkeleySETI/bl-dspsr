@@ -27,6 +27,9 @@ dsp::LoadToFold::Config::Config ()
   // sampling threshold
   excision_threshold = -1.0;
 
+  // by default, do not denormalize using DAT_SCL and DAT_OFFS
+  apply_FITS_scale_and_offset = false;
+
   // perform coherent dedispersion
   coherent_dedispersion = true;
 

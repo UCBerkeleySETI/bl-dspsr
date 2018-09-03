@@ -62,6 +62,9 @@ namespace dsp {
     // sampling threshold
     float excision_threshold;
 
+    // when unpacking FITS data, denormalize using DAT_SCL and DAT_OFFS
+    bool apply_FITS_scale_and_offset;
+    
     // perform coherent dedispersion
     bool coherent_dedispersion;
 

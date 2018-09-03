@@ -39,6 +39,23 @@ dsp::FITSUnpacker::FITSUnpacker(const char* name) : Unpacker(name)
 
 void dsp::FITSUnpacker::set_parameters (FITSFile* ff)
 {
+  /*
+    WvS 2018 July 04 - Note that, if the CFITSIO library is not
+    detected by the dspsr configure script, then the code that sets
+    things up to call this method (in Signal/Pulsar/LoadToFold1.C)
+    does not get compiled.  However, before today, not detecting
+    CFITSIO (and therefore not defining HAVE_CFITSIO) did not stop one
+    from enabling PSRFITS support (by including "fits" in
+    backends.list).  Therefore, if everthing compiled and linked, it
+    was possible for dspsr to run with PSRFITS support enabled but
+    without CFITSIO-related code (like this method) enabled.
+  */
+  
+#if _DEBUG
+  cerr << "dsp::FITSUnpacker::set_parameters"
+    " dat_scl size=" << ff->dat_scl.size() << endl;
+#endif
+  
   zero_off = ff->zero_off;
   dat_scl = ff->dat_scl;
   dat_offs = ff->dat_offs;
@@ -86,8 +103,11 @@ void dsp::FITSUnpacker::unpack()
   // Make sure scales and offsets exist
   if (dat_scl.size() == 0)
   {
-    dat_scl.assign(nchan,1);
-    dat_offs.assign(nchan,0);
+#if _DEBUG
+    cerr << "dsp::FITSUnpacker::unpack dat_scl empty" << endl;
+#endif
+    dat_scl.assign(nchan*npol,1);
+    dat_offs.assign(nchan*npol,0);
   }
 
   // Number of samples in one byte.
@@ -111,6 +131,12 @@ void dsp::FITSUnpacker::unpack()
         const int shifted_number = *from >> (mod * nbit);
 
         float* into = output->get_datptr(ichan, ipol) + idat;
+
+#if 0
+	cerr << "ipol=" << ipol << " ichan=" << ichan 
+	     << " scl=" << *scl << " off=" << *off << endl;
+#endif
+ 
         *into = (*this.*p)(shifted_number) * (*scl) + (*off);
         ++scl; ++off;
 

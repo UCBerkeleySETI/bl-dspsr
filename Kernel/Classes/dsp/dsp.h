@@ -17,14 +17,13 @@
  
   \section intro Introduction
  
-  The Baseband Data Reduction Library implements a family of C++
-  classes that may be used in the loading and manipulation of
-  observational data, primarily as a regularly sampled function of
-  time.  This includes both phase-coherent data, as stored by baseband
-  recording systems, and detected data, as produced by a filterbank
-  system.  The functionality, contained in the dsp namespace, is
-  divided into three main classes: data containers, operations,
-  and auxilliary objects.
+  DSPSR implements a family of C++ classes that may be used to load,
+  transform and reduce observational data, primarily data that are
+  regularly sampled in time (and, optionally, frequency).  This
+  includes both phase-coherent data, as stored by baseband recording
+  systems, and detected data, as produced by a filterbank system.  The
+  functionality, contained in the dsp namespace, is divided into three
+  main classes: data containers, operations, and auxilliary objects.
 
   The most general data container is the dsp::TimeSeries class, which
   is used to store the floating point representation of the signal in
@@ -51,19 +50,23 @@
   When adding a new file format, the following steps should be followed:
   <UL>
 
-  <LI> Create a new subdirectory of baseband, say baseband/backend,
+  <LI> Create a new subdirectory of <tt>dspsr/Kernel/Formats</tt>, 
+  say <tt>dspsr/Kernel/Formats/myformat</tt>, 
   and create all new files here.
 
   <LI> Inherit dsp::File or one of its derived classes, implement the
-  header-parsing code, and add the new class to File_registry.C using
-  preprocessor directives.
+  header-parsing code, and add the new class to
+  <tt>dspsr/Kernel/Formats/File_registry.C</tt> using preprocessor
+  directives.
 
   <LI> Inherit dsp::Unpacker or one of its derived classes, implement
-  the bit-unpacking code, and add the new class to Unpacker_registry.C
-  using preprocessor directives.
+  the bit-unpacking code, and add the new class to
+  <tt>dspsr/Kernel/Formats/Unpacker_registry.C</tt> using preprocessor
+  directives.
 
-  <LI> Define the appropriate preprocessor directives within an
-  optional section of Makefile.backends.
+  <LI> Add the name of the new subdirectory to the ASCII text file
+  named <tt>backends.list</tt> in the DSPSR build directory (where you
+  type <kbd>make</kbd>).
 
   </UL>
 
