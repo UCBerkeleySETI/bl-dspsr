@@ -220,6 +220,13 @@ void dsp::Detection::square_law ()
   if (verbose)
     cerr << "dsp::Detection::square_law" << endl;
 
+  if (input->get_ndat() == 0)
+  {
+    if (verbose)
+      cerr << "dsp::Detection::square_law ndat==0, ignoring" << endl;
+    return;
+  }
+
   if (engine)
   {
     if (verbose)
@@ -323,6 +330,13 @@ void dsp::Detection::polarimetry () try
 {
   if (verbose)
     cerr << "dsp::Detection::polarimetry ndim=" << ndim << endl;
+
+  if (input->get_ndat() == 0)
+  {
+    if (verbose)
+      cerr << "dsp::Detection::polarimetry ndat==0, ignoring" << endl;
+    return;
+  }
 
   if (engine)
   {
