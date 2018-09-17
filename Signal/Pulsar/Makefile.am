@@ -29,9 +29,10 @@ libdspsr_la_SOURCES += FoldCUDA.cu TransferPhaseSeriesCUDA.C \
 
 endif
 
-bin_PROGRAMS = dspsr
+bin_PROGRAMS = dspsr t2pred
 
 dspsr_SOURCES = dspsr.C 
+t2pred_SOURCES = t2pred.C
 
 #############################################################################
 #
