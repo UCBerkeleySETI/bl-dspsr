@@ -22,6 +22,7 @@
 #endif
 
 #include <errno.h>
+#include <string.h>
 
 using namespace std;
 
@@ -34,9 +35,8 @@ dsp::UWBUnpacker::UWBUnpacker (const char* _name) : HistUnpacker (_name)
  
   set_ndig (2); 
   set_nstate (65536);
-  first_block = true;
 
-  npol = 0;
+  npol = 2;
   ndim = 2;
 }
 
@@ -56,7 +56,7 @@ unsigned dsp::UWBUnpacker::get_output_ipol (unsigned idig) const
 
 unsigned dsp::UWBUnpacker::get_output_ichan (unsigned idig) const
 {
-  return idig / 2;
+  return idig / 4;
 }
 
 unsigned dsp::UWBUnpacker::get_ndim_per_digitizer () const
@@ -140,7 +140,7 @@ void dsp::UWBUnpacker::set_device (Memory* memory)
 
 bool dsp::UWBUnpacker::matches (const Observation* observation)
 {
-  return observation->get_machine()== "UWB"
+  return (observation->get_machine()== "UWB" || observation->get_machine()== "Medusa")
     && observation->get_nchan() == 1
     && observation->get_ndim() == 2
     && (observation->get_npol() == 2 || observation->get_npol() == 1)
@@ -154,13 +154,6 @@ void dsp::UWBUnpacker::unpack ()
 
   npol = input->get_npol();
   set_ndig (npol*2);
-
-  unsigned long * hist;
-  for (unsigned ipol=0; ipol<npol; ipol++)
-  {
-    hist = get_histogram (ipol*2 + 0);
-    hist = get_histogram (ipol*2 + 1);
-  }
 
   if (engine)
   {
@@ -201,12 +194,11 @@ void dsp::UWBUnpacker::unpack ()
     {
       for (unsigned isamp=0; isamp<nsamp_block*ndim; isamp+=2)
       {
-        int16_t re = from[isamp+0]^0x8000;
-        into[isamp+0] = float (re);
+        const int16_t re = convert_offset_binary(from[isamp+0]);
+        into[isamp+0] = float(re);
 
-        int16_t im = from[isamp+1]^0x8000;
-        into[isamp+1] = float (im);
-
+        const int16_t im = convert_offset_binary(from[isamp+1]);
+        into[isamp+1] = float(im);
 
         hists[0][int32_t(re)+32768]++;
         hists[1][int32_t(im)+32768]++;
@@ -216,6 +208,5 @@ void dsp::UWBUnpacker::unpack ()
       from += from_stride;
     }
   } // for each polarisation
-  
-  first_block = false;
 }
+

@@ -14,7 +14,6 @@
 #include "dsp/MemoryCUDA.h"
 
 #include "Error.h"
-#define WARP_SIZE 32
 #define NSAMP_PER_BLOCK 2048
 #define NPOL 2
 
@@ -22,7 +21,7 @@ using namespace std;
 
 void check_error_stream (const char*, cudaStream_t);
 
-__inline__ __device__ int16_t convert_offset_binary(int16_t in) { return  in^0x8000; };
+__inline__ __device__ int16_t convert_offset_binary(int16_t in) { if (in == 0) return 0; else return  in^0x8000; };
 
 /* 1024 threads, and 2048 samples per block */
 __global__ void uwb_unpack_fpt_2pol_kernel (float2 * to_a, float2 * to_b, 
@@ -74,7 +73,7 @@ __global__ void uwb_unpack_fpt_2pol_kernel (float2 * to_a, float2 * to_b,
 }
 
 /* 1024 threads, and 2048 samples per block */
-__global__ void uwb_unpack_fpt_1pol_kernel (float2 * to, const int32_t * from, uint64_t ndat, bool first_block)
+__global__ void uwb_unpack_fpt_1pol_kernel (float2 * to, const int32_t * from, uint64_t ndat)
 {
   uint64_t idx = (blockIdx.x * NSAMP_PER_BLOCK) + threadIdx.x;
 
@@ -103,11 +102,9 @@ __global__ void uwb_unpack_fpt_1pol_kernel (float2 * to, const int32_t * from, u
   to[idx] = unpacked;
 }
 
-
 CUDA::UWBUnpackerEngine::UWBUnpackerEngine (cudaStream_t _stream)
 {
   stream = _stream;
-  first_block = true;
 }
 
 void CUDA::UWBUnpackerEngine::setup ()
@@ -152,10 +149,9 @@ void CUDA::UWBUnpackerEngine::unpack (const dsp::BitSeries * input, dsp::TimeSer
   else
   {
     float2  * into = (float2 *) output->get_datptr(0, 0);
-    uwb_unpack_fpt_1pol_kernel<<<nblocks,nthreads,0,stream>>> (into, from, ndat, first_block);
+    uwb_unpack_fpt_1pol_kernel<<<nblocks,nthreads,0,stream>>> (into, from, ndat);
   }
 
-  first_block = false;
   if (dsp::Operation::record_time || dsp::Operation::verbose)
     check_error_stream ("CUDA::UWBUnpackerEngine::unpack", stream);
 }

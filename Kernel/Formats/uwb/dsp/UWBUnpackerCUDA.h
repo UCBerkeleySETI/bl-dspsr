@@ -37,8 +37,6 @@ namespace CUDA
 
     dsp::BitSeries staging;
 
-    bool first_block;
-
   };
 }
 
