@@ -68,6 +68,8 @@ static dsp::Unpacker::Register::Enter<dsp::SKA1Unpacker> ska1;
 #if HAVE_uwb
 #include "dsp/UWBUnpacker.h"
 static dsp::Unpacker::Register::Enter<dsp::UWBUnpacker> uwb;
+#include "dsp/UWBFloatUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::UWBFloatUnpacker> uwbfloat;
 #endif
 
 #if HAVE_cpsr
