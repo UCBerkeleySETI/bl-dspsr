@@ -25,10 +25,15 @@ void dsp::TransferCUDA::transformation ()
 {
   prepare ();
 
-  if (stream)
-    cudaStreamSynchronize(stream);
-  else
-    cudaThreadSynchronize();
+  if (kind == cudaMemcpyHostToDevice)
+  {
+    if (verbose)
+      cerr << "dsp::TransferCUDA::transformation synchornizing pre H2D transfer" << endl;
+    if (stream)
+      cudaStreamSynchronize(stream);
+    else
+      cudaThreadSynchronize();
+  }
 
   if (verbose)
   {
@@ -71,6 +76,16 @@ void dsp::TransferCUDA::transformation ()
     }
     else
       cerr << endl;
+  }
+
+  if (kind == cudaMemcpyDeviceToHost)
+  {
+    if (verbose)
+      cerr << "dsp::TransferCUDA::transformation synchornizing post D2H transfer" << endl;
+    if (stream)
+      cudaStreamSynchronize(stream);
+    else
+      cudaThreadSynchronize();
   }
 }
 
