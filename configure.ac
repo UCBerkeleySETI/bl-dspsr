@@ -5,6 +5,7 @@ AC_PREREQ(2.57)
 AC_INIT([DSPSR],[2016-06+],[dspsr-developers@lists.sourceforge.net])
 
 AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([Kernel/Makefile.am])
 
 AC_ARG_VAR([PSRHOME],    [Standard pulsar home directory])
@@ -14,6 +15,11 @@ AC_ARG_VAR([CUDA_NVCC_FLAGS], [CUDA nvcc flags (e.g. -arch, etc)])
 
 AC_PREFIX_DEFAULT([${PSRHOME:-"/usr/local"}${PSRHOME:+"/$LOGIN_ARCH"}])
 
+################################################################################
+#
+# Warn about pulsar group environment variables
+#
+
 if test x"$PSRHOME" = x; then
   AC_MSG_WARN([The PSRHOME environment variable is not set])
 else
@@ -21,6 +27,20 @@ else
     AC_MSG_WARN([The LOGIN_ARCH environment variable is not set])
   fi
 fi
+
+################################################################################
+#
+# Set the @prefix@ variable in autoconf-generated files
+#
+if test "x$prefix" = xNONE; then
+  prefix=$ac_default_prefix
+fi
+
+DSPSR_INSTALL=$prefix
+DSPSR_HTTP="http://psrchive.sourceforge.net"
+
+AC_SUBST(DSPSR_INSTALL)
+AC_SUBST(DSPSR_HTTP)
 
 #
 #
@@ -82,6 +102,23 @@ AC_SUBST(PSRCHIVE_ACLOCAL)
 
 PSRCHIVE_INCLUDE=`$psrchive_config --cflags | sed s/-pthread//`
 AC_SUBST(PSRCHIVE_INCLUDE)
+
+#
+# Set up to use any packages already installed in the target directory
+#
+AC_ARG_ENABLE([existing],
+              AC_HELP_STRING([--disable-existing],
+              [Don't look for dependencies in existing installation]))
+
+if test -d $DSPSR_INSTALL -a x"$enable_existing" != x"no"; then
+  CPPFLAGS="-I$DSPSR_INSTALL/include $CPPFLAGS"
+  LDFLAGS="-L$DSPSR_INSTALL/lib $LDFLAGS"
+fi
+
+#
+# enable POSIX C99 format macros
+#
+AC_DEFINE([__STDC_FORMAT_MACROS], [1], [enable POSIX C99 format macros])
 
 #
 # Checks for optional libraries

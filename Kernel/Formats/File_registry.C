@@ -68,6 +68,9 @@ static dsp::File::Register::Enter<dsp::FadcFile> register_fadc;
 #endif
 
 #if HAVE_fits
+#if !HAVE_CFITSIO
+#error Cannot enable FITS support without CFITSIO library support
+#endif
 #include "dsp/FITSFile.h"
 static dsp::File::Register::Enter<dsp::FITSFile> register_fits;
 #endif

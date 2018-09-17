@@ -32,6 +32,7 @@ nobase_include_HEADERS = environ.h ascii_header.h \
 	dsp/ObservationInterface.h \
 	dsp/GenericEightBitUnpacker.h \
 	dsp/GenericFourBitUnpacker.h \
+	dsp/GenericTwoBitCorrection.h \
 	dsp/CommandLineHeader.h dsp/OutputFileShare.h
 
 libClasses_la_SOURCES = ascii_header.c ASCIIObservation.C	    \
@@ -53,6 +54,7 @@ libClasses_la_SOURCES = ascii_header.c ASCIIObservation.C	    \
 	ObservationInterface.C \
 	GenericEightBitUnpacker.C \
 	GenericFourBitUnpacker.C \
+	GenericTwoBitCorrection.C \
 	CommandLineHeader.C OutputFileShare.C
 
 if HAVE_MPI

@@ -106,6 +106,13 @@ if ( ! $hdrset ) then
     exit
   endif
 
+else
+
+  set freq = `grep FREQ $hdr | awk '{print $2}'`
+  set bw = `grep BW $hdr | awk '{print $2}'`
+
+  echo "Parsed from $hdr FREQ=$freq BW=$bw"
+
 endif
 
 if ( "$gpu" != "" ) then
