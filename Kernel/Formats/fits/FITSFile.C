@@ -169,6 +169,12 @@ void dsp::FITSFile::open_file(const char* filename)
   get_info()->set_coordinates(archive->get_coordinates());
   get_info()->set_receiver(archive->get<Pulsar::Receiver>()->get_name());
   get_info()->set_basis(archive->get_basis());
+
+  if (header.nsuboffs < 0)
+  {
+    throw Error(InvalidState, "FITSFile::open_file",
+        "nsuboffs was less than zero");
+  }
   get_info()->set_start_time(header.start_time
       + (uint64_t)header.nsuboffs*(uint64_t)samples_in_row*header.tsamp);
   std::string backend_name = archive->get<Pulsar::Backend>()->get_name();

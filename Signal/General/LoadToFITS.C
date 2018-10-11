@@ -259,17 +259,16 @@ void dsp::LoadToFITS::construct () try
 
     if ((config->coherent_dedisp) && (config->dispersion_measure != 0.0))
     {
-      cerr << "digifits: performing coherent dedispersion" << endl;
+      cerr << "digifits: performing coherent dedispersion at " << config->dispersion_measure << endl;
       kernel = new Dedispersion;
       kernel->set_dispersion_measure( config->dispersion_measure );
 
       unsigned frequency_resolution = config->filterbank.get_freq_res ();
-      cerr << "digifits: config->filterbank.get_freq_res= " << frequency_resolution << endl;
       if (frequency_resolution)
       {
         cerr << "digifits: setting filter length to " << frequency_resolution << endl;
-        //kernel->set_frequency_resolution (frequency_resolution);
-        kernel -> set_times_minimum_nfft (frequency_resolution);
+        kernel->set_frequency_resolution (frequency_resolution);
+        //kernel -> set_times_minimum_nfft (frequency_resolution);
       }
     }
     else
@@ -383,7 +382,6 @@ void dsp::LoadToFITS::construct () try
         detection->set_output_state (Signal::Intensity);
         detection->set_engine (new CUDA::DetectionEngine(stream) );
         detection->set_output (timeseries = new_TimeSeries());
-        cerr << "detection->set_output(timeseries = newTimeSeries())" << endl;
         detection->set_output_ndim (1);
         timeseries->set_memory (device_memory);
       }
@@ -485,7 +483,7 @@ void dsp::LoadToFITS::construct () try
 
   if ( config->dedisperse )
   {
-    //if (verbose)
+    if (verbose)
       cerr << "digifits: removing dispersion delays" << endl;
 
     SampleDelay* delay = new SampleDelay;
@@ -646,7 +644,6 @@ void dsp::LoadToFITS::prepare () try
   }
 
   unsigned filterbank_resolution = minimum_samples - block_overlap;
-  cerr << "filterbank_resolution=" << filterbank_resolution << endl;
 
   if (convolution)
   {

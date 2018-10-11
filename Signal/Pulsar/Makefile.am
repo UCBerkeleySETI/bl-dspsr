@@ -31,6 +31,11 @@ endif
 
 bin_PROGRAMS = dspsr
 
+if HAVE_TEMPO2
+bin_PROGRAMS += t2pred
+t2pred_SOURCES = t2pred.C
+endif
+
 dspsr_SOURCES = dspsr.C 
 
 #############################################################################

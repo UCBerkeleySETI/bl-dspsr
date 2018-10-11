@@ -6,20 +6,20 @@
  *
  ***************************************************************************/
 
-#ifndef __baseband_cuda_UWBUnpacker_h
-#define __baseband_cuda_UWBUnpacker_h
+#ifndef __baseband_cuda_UWBFloatUnpacker_h
+#define __baseband_cuda_UWBFloatUnpacker_h
 
-#include "dsp/UWBUnpacker.h"
+#include "dsp/UWBFloatUnpacker.h"
 #include <cuda_runtime.h>
 
 namespace CUDA
 {
-  class UWBUnpackerEngine : public dsp::UWBUnpacker::Engine
+  class UWBFloatUnpackerEngine : public dsp::UWBFloatUnpacker::Engine
   {
   public:
 
     //! Default Constructor
-    UWBUnpackerEngine (cudaStream_t stream);
+    UWBFloatUnpackerEngine (cudaStream_t stream);
 
     void setup ();
 

@@ -68,6 +68,8 @@ static dsp::Unpacker::Register::Enter<dsp::SKA1Unpacker> ska1;
 #if HAVE_uwb
 #include "dsp/UWBUnpacker.h"
 static dsp::Unpacker::Register::Enter<dsp::UWBUnpacker> uwb;
+#include "dsp/UWBFloatUnpacker.h"
+static dsp::Unpacker::Register::Enter<dsp::UWBFloatUnpacker> uwbfloat;
 #endif
 
 #if HAVE_cpsr
@@ -293,6 +295,14 @@ static dsp::Unpacker::Register::Enter<dsp::GenericEightBitUnpacker> gen8bit;
 
 #include "dsp/GenericFourBitUnpacker.h"
 static dsp::Unpacker::Register::Enter<dsp::GenericFourBitUnpacker> gen4bit;
+
+/*
+  Generic two-bit unpacker is used if no other two-bit unpacker steps up
+*/
+
+#include "dsp/GenericTwoBitCorrection.h"
+static dsp::Unpacker::Register::Enter<dsp::GenericTwoBitCorrection> gen2bit;
+
 
 /*
   get_registry is defined here to ensure that this file is linked

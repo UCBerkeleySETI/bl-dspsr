@@ -56,10 +56,42 @@ void dsp::PolnReshape::p2d2_p4d1()
   }
 }
 
+// reshape from 2pol, 2dim to 2pol, 1dim
 void dsp::PolnReshape::p2d2_p2d1()
 {
-    throw Error (InvalidParam, "dsp::PolnReshape::p2d2_p2d1",
-		 "not implemented");
+  if (verbose)
+    cerr << "dsp::PolnReshape::p2d2_p1d1" << endl;
+  const uint64_t ndat  = input->get_ndat();
+  const unsigned nchan = input->get_nchan();
+
+  output->set_npol(2);
+  output->set_ndim(1);
+  output->resize(ndat);
+
+  switch (input->get_order())
+  {
+  case TimeSeries::OrderFPT:
+  {
+    for (unsigned ichan=0; ichan < nchan; ichan++)
+    {
+      float* out_pp = output->get_datptr (ichan, 0);
+      float* out_qq = output->get_datptr (ichan, 1);
+
+      const float* in_data = input->get_datptr (ichan, 0);
+      // PP and QQ are stored in first input pol
+      for (uint64_t idat=0; idat < ndat; idat++)
+      {
+        out_pp[idat] = in_data[2*idat];
+        out_qq[idat] = in_data[2*idat+1];
+      }
+    }
+
+    break;
+  }
+  default :
+    throw Error (InvalidState, "dsp::PolnReshape::p2d2_p2d1",
+     "Only FPT order implemented.");
+  }
 }
 
 void dsp::PolnReshape::p2d2_p1d1()
@@ -139,7 +171,6 @@ void dsp::PolnReshape::transformation ()
          << " input state=" << tostring(input->get_state())
          << " output state=" << tostring(state) << endl;
 
-  const uint64_t input_ndat  = input->get_ndat();
   const unsigned input_ndim  = input->get_ndim();
   const unsigned input_npol  = input->get_npol();
 

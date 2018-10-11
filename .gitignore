@@ -67,6 +67,7 @@ Signal/General/undersampling_speed
 Signal/Makefile
 Signal/Pulsar/Makefile
 Signal/Pulsar/dspsr
+Signal/Pulsar/t2pred
 Signal/Statistics/sk_distrib_plot
 Signal/Statistics/sk_limit_plot
 Signal/Statistics/sklimit

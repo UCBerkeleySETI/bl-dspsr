@@ -2,36 +2,28 @@
 
  */
 
-#ifndef __dsp_UWBUnpacker_h
-#define __dsp_UWBUnpacker_h
+#ifndef __dsp_UWBFloatUnpacker_h
+#define __dsp_UWBFloatUnpacker_h
 
-#include "dsp/HistUnpacker.h"
+#include "dsp/Unpacker.h"
 
 namespace dsp {
   
-  class UWBUnpacker : public HistUnpacker
+  class UWBFloatUnpacker : public Unpacker
   {
   public:
 
     //! Constructor
-    UWBUnpacker (const char* name = "UWBUnpacker");
+    UWBFloatUnpacker (const char* name = "UWBFloatUnpacker");
 
     //! Destructor
-    ~UWBUnpacker ();
+    ~UWBFloatUnpacker ();
 
     bool get_order_supported (TimeSeries::Order order) const;
     void set_output_order (TimeSeries::Order order);
 
-    unsigned get_output_offset (unsigned idig) const;
-
-    unsigned get_output_ipol (unsigned idig) const;
-
-    unsigned get_output_ichan (unsigned idig) const;
-    
-    unsigned get_ndim_per_digitizer () const;
-
     //! Cloner (calls new)
-    virtual UWBUnpacker * clone () const;
+    virtual UWBFloatUnpacker * clone () const;
 
     //! Return true if the unpacker can operate on the specified device
     bool get_device_supported (Memory*) const;
@@ -55,29 +47,21 @@ namespace dsp {
 
   private:
 
-    inline int16_t convert_offset_binary (int16_t in)
-    {
-      if (in == 0)
-        return 0;
-      else
-        return in^0x8000;
-    };
-
     unsigned ndim;
 
     unsigned npol;
 
     bool device_prepared;
 
-    float scale;
+    bool first_block;
 
   };
 
-  class UWBUnpacker::Engine : public Reference::Able
+  class UWBFloatUnpacker::Engine : public Reference::Able
   {
   public:
 
-    virtual void unpack(const BitSeries * input, TimeSeries * output) = 0;
+    virtual void unpack (const BitSeries * input, TimeSeries * output) = 0;
 
     virtual bool get_device_supported (Memory* memory) const = 0;
 

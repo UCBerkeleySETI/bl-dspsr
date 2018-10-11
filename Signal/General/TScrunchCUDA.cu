@@ -71,7 +71,7 @@ __global__ void fpt_ndim2_ndim2 (float2* in_base, float2* out_base,
     result.y += (*in_base).y;
   }
 
-  out_base += blockIdx.y * out_Fstride +threadIdx.y * out_Pstride + i;
+  out_base += blockIdx.y * out_Fstride + threadIdx.y * out_Pstride + i;
   *out_base = result;
 }
 
@@ -263,7 +263,9 @@ void CUDA::TScrunchEngine::fpt_tscrunch(const dsp::TimeSeries *in,
 
   // use a 2-dimensional thread block to eliminate 3rd grid dimension
 
-#define USE_SHARED
+// SHARED has a bug. AJ...
+
+//#define USE_SHARED
 #ifdef USE_SHARED
   // set number of threads to be number of output samples, cap at 512
   dim3 threads (512);

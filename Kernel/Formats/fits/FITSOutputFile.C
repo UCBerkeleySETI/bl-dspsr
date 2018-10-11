@@ -107,7 +107,8 @@ dsp::FITSOutputFile::FITSOutputFile (const char* filename)
   nbit = 2;
 
   use_atnf = false;
-  mangle_output = false;
+  // this should be parameterized
+  mangle_output = true;
   max_length = 0;
 }
 
@@ -559,7 +560,7 @@ void dsp::FITSOutputFile::finalize_fits ()
     int nstot = (written*8)/(npol * nchan * nbit);
     psrfits_update_key<int> (fptr, "NSTOT", nstot );
     int nsuboffs = samples_written/nsblk - written/nbblk;
-    if (nsuboffs == -1)
+    if (nsuboffs < 0)
       nsuboffs = 0;
     psrfits_update_key<int> (fptr, "NSUBOFFS", nsuboffs);
     int status = 0;
