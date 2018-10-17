@@ -91,6 +91,8 @@ void dsp::FITSUnpacker::unpack()
     case 8:
       p = &dsp::FITSUnpacker::eightBitNumber;
       break;
+    case 16:
+      break;
     default:
       throw Error(InvalidState, "FITSUnpacker::unpack",
           "invalid nbit=%d", nbit);
@@ -115,38 +117,58 @@ void dsp::FITSUnpacker::unpack()
   const int mod_offset = samples_per_byte - 1;
 
   const unsigned char* from = input->get_rawptr();
+  const int16_t* from16 = (int16_t *)input->get_rawptr();
 
-  // Iterate through input data, split the byte depending on number of
-  // samples per byte, get corresponding mapped value and store it
-  // as pol-chan-dat.
-  //
-  // TODO: Use a lookup table???
-  for (unsigned idat = 0; idat < ndat; ++idat) {
-    float* scl = &dat_scl[0];
-    float* off = &dat_offs[0];
-    for (unsigned ipol = 0; ipol < npol; ++ipol) {
-      for (unsigned ichan = 0; ichan < nchan;) {
+  if (nbit<=8) {
 
-        const int mod = mod_offset - (ichan % samples_per_byte);
-        const int shifted_number = *from >> (mod * nbit);
+    // Iterate through input data, split the byte depending on number of
+    // samples per byte, get corresponding mapped value and store it
+    // as pol-chan-dat.
+    //
+    // TODO: Use a lookup table???
+    for (unsigned idat = 0; idat < ndat; ++idat) {
+      float* scl = &dat_scl[0];
+      float* off = &dat_offs[0];
+      for (unsigned ipol = 0; ipol < npol; ++ipol) {
+        for (unsigned ichan = 0; ichan < nchan;) {
 
-        float* into = output->get_datptr(ichan, ipol) + idat;
+          const int mod = mod_offset - (ichan % samples_per_byte);
+          const int shifted_number = *from >> (mod * nbit);
+
+          float* into = output->get_datptr(ichan, ipol) + idat;
 
 #if 0
-	cerr << "ipol=" << ipol << " ichan=" << ichan 
-	     << " scl=" << *scl << " off=" << *off << endl;
+          cerr << "ipol=" << ipol << " ichan=" << ichan 
+               << " scl=" << *scl << " off=" << *off << endl;
 #endif
- 
-        *into = (*this.*p)(shifted_number) * (*scl) + (*off);
-        ++scl; ++off;
+   
+          *into = (*this.*p)(shifted_number) * (*scl) + (*off);
+          ++scl; ++off;
 
-        // Move to next byte when the entire byte has been split.
-        if ((++ichan) % (samples_per_byte) == 0) {
-          ++from;
+          // Move to next byte when the entire byte has been split.
+          if ((++ichan) % (samples_per_byte) == 0) {
+            ++from;
+          }
         }
       }
     }
   }
+
+  else if (nbit==16) {
+    for (unsigned idat=0; idat<ndat; idat++) {
+      float* scl = &dat_scl[0];
+      float* off = &dat_offs[0];
+      for (unsigned ipol=0; ipol<npol; ipol++) {
+        for (unsigned ichan=0; ichan<nchan; ichan++) {
+          float* into = output->get_datptr(ichan, ipol) + idat;
+          *into = (float)(*from16) * (*scl) + (*off);
+          ++scl; ++off;
+          ++from16;
+        }
+      }
+    }
+  }
+
 }
 
 bool dsp::FITSUnpacker::matches(const Observation* observation)
