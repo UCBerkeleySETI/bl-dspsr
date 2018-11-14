@@ -7,6 +7,7 @@
 
 // Cribbed from Willem's SigProcDigitizer
 
+#include "config.h"
 #include "dsp/FITSDigitizer.h"
 #include "dsp/InputBuffering.h"
 #include <assert.h>
@@ -491,25 +492,27 @@ void dsp::FITSDigitizer::pack ()
 
 void dsp::FITSDigitizer::rescale_pack ()
 {
+  if (verbose)
+    cerr << "dsp::FITSDigitizer::rescale_pack scale=" << scale << std::endl;
   if (!scale)
     init ();
-
-  if (input->get_ndat() < rescale_nsamp)
-  {
-    if (verbose)
-      cerr << "dsp::FITSDigitizer::transformation waiting for additional samples" << std::endl;
-    get_buffering_policy()->set_next_start ( 0 );
-    output->set_ndat (0);
-    return;
-  }
-
-  measure_scale ();
 
   // ChannelSort will re-organize the frequency channels in the output
   output->set_bandwidth ( -fabs(input->get_bandwidth()) );
   output->set_swap ( false );
   output->set_nsub_swap ( 0 );
   output->set_input_sample ( input->get_input_sample() );
+
+  if (input->get_ndat() < rescale_nsamp)
+  {
+    if (verbose)
+      cerr << "dsp::FITSDigitizer::rescale_pack waiting for additional samples" << std::endl;
+    get_buffering_policy()->set_next_start ( 0 );
+    output->set_ndat (0);
+    return;
+  }
+
+  measure_scale ();
 
   const unsigned npol = input->get_npol();
 
@@ -607,7 +610,7 @@ void dsp::FITSDigitizer::rescale_pack ()
     unsigned inner_stride = nchan * npol;
     unsigned idx = 0, bit_shift = 0; // make gcc happy
 #if HAVE_OPENMP
-#pragma omp parallel for
+//#pragma omp parallel for
 #endif
     for (unsigned ichan=0; ichan < nchan; ichan++)
     {
