@@ -385,26 +385,39 @@ void dsp::ASCIIObservation::load (const char* header)
 
   // //////////////////////////////////////////////////////////////////////
   //
-  // RA and DEC
+  // RA - Right Ascension of source in hh:mm:ss.sss
   //
   bool has_position = true;
-  double ra, dec;
+  double ra = 0;
 
-  if (has_position)
-    has_position = (ascii_header_check (header, "RA", "%s", buffer) == 1);
+  has_position = (ascii_header_check (header, "RA", "%s", buffer) == 1);
 
+  if (!has_position)
+    has_position = (ascii_header_check (header, "RAJ", "%s", buffer) == 1);
+  
   if (has_position)
     has_position = (str2ra (&ra, buffer) == 0);
 
-  if (has_position)
-    has_position = (ascii_header_check (header, "DEC", "%s", buffer) == 1);
+  if (!has_position)
+    ra = 0;
+  
+  // //////////////////////////////////////////////////////////////////////
+  //
+  // DEC - Declination of source in dd:mm:ss.sss
+  //
+  double dec = 0;
+  
+  has_position = (ascii_header_check (header, "DEC", "%s", buffer) == 1);
+
+  if (!has_position)
+    has_position = (ascii_header_check (header, "DECJ", "%s", buffer) == 1);
 
   if (has_position)
     has_position = (str2dec2 (&dec, buffer) == 0);
 
   if (!has_position)
-    ra = dec = 0.0;
-
+    dec = 0;
+  
   coordinates.setRadians (ra, dec);
 
   // /////////////////////////////////////////////////////////////////////

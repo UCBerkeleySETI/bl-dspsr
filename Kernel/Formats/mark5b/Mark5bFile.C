@@ -118,17 +118,19 @@ void dsp::Mark5bFile::open_file (const char* filename)
   Input::resolution = m5stream->samplegranularity;
 
   int refmjd = 0;
-  if (ascii_header_get (header,"REFMJD","%d",&refmjd) < 0)
-   throw Error (InvalidParam, "Mark5bFile::open_file", 
-		 "failed read REFMJD");
+  if (ascii_header_get (header,"REFMJD","%d",&refmjd) >= 0)
+  {
+    cerr << "REFMJD " << refmjd << endl;
+    refmjd += m5stream->mjd;
+    cerr << "MJD = " << refmjd << endl;
+  }
+  else if (ascii_header_get (header,"MJD","%d",&refmjd) < 0)
+   throw Error (InvalidParam, "Mark5bFile::open_file",
+                 "failed read to REFMJD and MJD");
 
-  cerr << "REFMJD " << refmjd << endl;
-  m5stream->mjd += refmjd;
-
-  cerr << "MJD = " << m5stream->mjd << endl;
   cerr << "SEC = " << m5stream->sec << endl;
 
-  get_info()->set_start_time( MJD(m5stream->mjd, m5stream->sec, 0) );
+  get_info()->set_start_time( MJD(refmjd, m5stream->sec, 0) );
 
   // ///////////////////////////////////////////////////////////////
   // TELESCOPE
