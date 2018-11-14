@@ -27,8 +27,10 @@ void usage()
     "t2pred - generate Tempo2 predictor suitable for dspsr\n"
     "  Usage: t2pred ephemeris_file input_file\n"
     "\n"
+    "   -f ncoeff     number of frequency coefficients\n"
     "   -h            display help\n"
     "   -k telescope  set the telescope\n"
+    "   -t ncoeff     number of time coefficients in the generator\n"
     "   -v            enable verbosity flags\n"
     "\n"
        << endl;
@@ -44,9 +46,17 @@ int main(int argc, char ** argv) try
 
   string telescope;
 
+  int ntime_coeff = -1;
+
+  int nfreq_coeff = -1;
+
   int c;
-  while ((c = getopt(argc, argv, "hk:v")) != -1)
+  while ((c = getopt(argc, argv, "f:hk:t:v")) != -1)
     switch (c) {
+
+    case 'f':
+      nfreq_coeff = atoi (optarg);
+      break;
 
     case 'h':
       usage ();
@@ -54,6 +64,10 @@ int main(int argc, char ** argv) try
 
     case 'k':
       telescope.assign(optarg);
+      break;
+
+    case 't':
+      ntime_coeff = atoi (optarg);
       break;
 
     case 'v':
@@ -89,6 +103,10 @@ int main(int argc, char ** argv) try
 
   MJD time = observation->get_start_time()-0.01;
   Pulsar::Generator* generator = Pulsar::Generator::factory (params);
+  Tempo2::Generator* t2generator = dynamic_cast<Tempo2::Generator*>(generator);
+
+  if ((nfreq_coeff > 0 || (ntime_coeff > 0)) && !t2generator)
+    throw Error (InvalidState, "t2pred", "Tempo2 ephermeris require for time or freq coeffs");
 
   /*
    * Tempo2 predictor code:
@@ -101,7 +119,6 @@ int main(int argc, char ** argv) try
    */
   MJD endtime = time + 86400;
 
-  //Tempo2::Generator::directory = new TemporaryDirectory("aj");
   generator->set_site( observation->get_telescope() );
   generator->set_parameters( params );
   generator->set_time_span( time, endtime );
@@ -109,6 +126,14 @@ int main(int argc, char ** argv) try
   double freq = observation->get_centre_frequency();
   double bw = fabs( observation->get_bandwidth() );
   generator->set_frequency_span( freq-bw/2, freq+bw/2 );
+
+  if (t2generator)
+  {
+    if (ntime_coeff > 0)
+      t2generator->set_time_ncoeff( ntime_coeff );
+    if (nfreq_coeff > 0)
+      t2generator->set_frequency_ncoeff( nfreq_coeff );
+  }
 
   // this will generate the predictor and should create the necessary files
   generator->generate ();
