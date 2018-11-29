@@ -42,7 +42,7 @@
  * Subroutine:  hgetm  (hstring,keyword, lstr, str) returns multi-keyword string
  * Subroutine:  hgetdate (hstring,keyword,date) returns date as fractional year
  * Subroutine:  hgetndec (hstring, keyword, ndec) returns number of dec. places
- * Subroutine:  hgetc  (hstring,keyword) returns character string
+ * Subroutine:  hgetc  (hstring,keyword,value_buffer) returns character string
  * Subroutine:  blsearch (hstring,keyword) returns pointer to blank lines
                 before keyword
  * Subroutine:  ksearch (hstring,keyword) returns pointer to header string entry
@@ -179,9 +179,10 @@ int *ival;
     int lval;
     char *dchar;
     char val[VLENGTH+1];
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII to binary */
     if (value != NULL) {
@@ -239,9 +240,10 @@ short *ival;
     int lval;
     char *dchar;
     char val[VLENGTH+1];
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII to binary */
     if (value != NULL) {
@@ -296,9 +298,10 @@ float *rval;
     int lval;
     char *dchar;
     char val[VLENGTH+1];
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* translate value from ASCII to binary */
     if (value != NULL) {
@@ -342,9 +345,10 @@ const char *keyword;    /* character string containing the name of the keyword
 double *dval;   /* Right ascension in degrees (returned) */
 {
     char *value;
+    char value_buffer[VLENGTH + 1];
 
     /* Get value from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII colon-delimited string to binary */
     if (value != NULL) {
@@ -371,9 +375,10 @@ const char *keyword;    /* character string containing the name of the keyword
 double *dval;   /* Right ascension in degrees (returned) */
 {
     char *value;
+    char value_buffer[VLENGTH + 1];
 
     /* Get value from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII colon-delimited string to binary */
     if (value != NULL) {
@@ -434,9 +439,10 @@ double *dval;
     int lval;
     char *dchar;
     char val[VLENGTH+1];
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII to binary */
     if (value != NULL) {
@@ -483,9 +489,10 @@ int *ival;
     char newval;
     int lval;
     char val[VLENGTH+1];
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII to binary */
     if (value != NULL) {
@@ -528,9 +535,10 @@ double *dval;
     int year, month, day, yday, i, hours, minutes;
     //static int mday[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
     int mday[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Translate value from ASCII to binary */
     if (value != NULL) {
@@ -721,10 +729,11 @@ char *str;      /* String (returned) */
     /* Loop through sequentially-named keywords */
     multiline = 1;
     for (ikey = 1; ikey < 500; ikey++) {
+        char value_buffer[VLENGTH + 1];
         sprintf (keywordi, keyform, keyword, ikey);
 
         /* Get value for this keyword */
-        value = hgetc (hstring, keywordi);
+        value = hgetc (hstring, keywordi, value_buffer);
         if (value != NULL) {
             lval = strlen (value);
             if (lval < lstri)
@@ -803,9 +812,10 @@ char *str;      /* String (returned) */
 {
     char *value;
     int lval;
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     if (value != NULL) {
         lval = strlen (value);
@@ -838,9 +848,10 @@ int *ndec;      /* Number of decimal places in keyword value */
 {
     char *value;
     int i, nchar;
+    char value_buffer[VLENGTH + 1];
 
     /* Get value and comment from header string */
-    value = hgetc (hstring,keyword);
+    value = hgetc(hstring, keyword, value_buffer);
 
     /* Find end of string and count backward to decimal point */
     *ndec = 0;
@@ -861,7 +872,7 @@ int *ndec;      /* Number of decimal places in keyword value */
 /* Extract character value for variable from FITS header string */
 
 char *
-hgetc (hstring,keyword0)
+hgetc (hstring,keyword0,value_buffer)
 
 const char *hstring;    /* character string containing FITS header information
                    in the format <keyword>= <value> {/ <comment>} */
@@ -870,9 +881,10 @@ const char *keyword0;   /* character string containing the name of the keyword
                    line beginning with this string.  if "[n]" is present,
                    the n'th token in the value is returned.
                    (the first 8 characters must be unique) */
+char * value_buffer;
 {
     //static char cval[80];
-    char cval[80];
+    char *cval;
     char *value;
     char cwhite[2];
     char squot[2], dquot[2], lbracket[2], rbracket[2], slash[2], comma[2];
@@ -890,6 +902,11 @@ const char *keyword0;   /* character string containing the name of the keyword
 
     if( !use_saolib ){
 #endif
+    if (value_buffer == NULL)
+    {
+        return NULL;
+    }
+    cval = value_buffer;
 
     squot[0] = (char) 39;
     squot[1] = (char) 0;
@@ -1326,7 +1343,7 @@ const char *in; /* Character string of sexigesimal or decimal degrees */
 
 {
     double dec;         /* Declination in degrees (returned) */
-    double deg, min, sec, sign;
+    double deg, min=0.0, sec, sign;
     char *value, *c1, *c2;
     int lval;
     char *dchar;
@@ -1921,4 +1938,5 @@ int     dropzero;       /* If nonzero, drop trailing zeroes */
  * Feb 28 2007  If header length is not set in hlength, set it to 0
  * May 31 2007  Add return value of 3 to isnum() if string has colon(s)
  * Aug 22 2007  If closing quote not found, make one up
+ * Sep  6 2016  Added third arg to hgetc() to correct a 'return ptr to stack' issue.
  */

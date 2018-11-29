@@ -6,10 +6,7 @@
  *
  ***************************************************************************/
 
-/* $Source: /cvsroot/dspsr/dspsr/Kernel/Classes/dsp/BlockFile.h,v $
-   $Revision: 1.8 $
-   $Date: 2010/10/22 19:17:56 $
-   $Author: demorest $ */
+// dspsr/Kernel/Classes/dsp/BlockFile.h
 
 
 #ifndef __dsp_BlockFile_h
@@ -59,7 +56,7 @@ namespace dsp {
       than the sampled data, this method should be overloaded and the
       additional information should be filtered out. */
     virtual int64_t load_bytes (unsigned char* buffer, uint64_t nbytes);
-    
+
     //! Set the file pointer to the absolute number of sampled data bytes
     /*! If the header_bytes attribute is set, this number of bytes
       will be subtracted by File::seek_bytes before seeking.  If the

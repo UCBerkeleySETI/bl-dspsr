@@ -11,6 +11,7 @@ Makefile.in
 Makefile *.o
 Kernel/Applications/Makefile
 Kernel/Applications/load_bits
+Kernel/Applications/digihdr
 Kernel/Classes/Makefile
 Kernel/Formats/Makefile
 Kernel/Formats/apsr/Makefile
@@ -51,15 +52,19 @@ Management/dspsr_ldflags
 Management/release.csh
 More/Applications/searchplot
 Signal/General/Makefile
+Signal/General/cufft_callback_bench
 Signal/General/digifil
+Signal/General/digifits
 Signal/General/digihist
 Signal/General/digimon
 Signal/General/digistat
 Signal/General/digitxt
 Signal/General/dmsmear
+Signal/General/fftbatch_speed
 Signal/General/filterbank_speed
 Signal/General/passband
 Signal/General/the_decimator
+Signal/General/undersampling_speed
 Signal/Makefile
 Signal/Pulsar/Makefile
 Signal/Pulsar/dspsr
@@ -110,6 +115,7 @@ local_include/
 python/dspsr.py
 python/dspsr_wrap.cxx
 stamp-h1
+tags
 update.log
 Documentation/doxygen.err
 Documentation/doxygen.out

@@ -6,10 +6,7 @@
  *
  ***************************************************************************/
 
-/* $Source: /cvsroot/dspsr/dspsr/Kernel/Classes/dsp/TimeSeries.h,v $
-   $Revision: 1.55 $
-   $Date: 2011/08/04 21:05:19 $
-   $Author: straten $ */
+// dspsr/Kernel/Classes/dsp/TimeSeries.h
 
 #ifndef __TimeSeries_h
 #define __TimeSeries_h
@@ -152,6 +149,12 @@ namespace dsp {
 
     void set_match (TimeSeries*);
 
+    class Engine;
+
+    void set_engine (Engine*);
+
+    Engine * get_engine () const { return engine; };
+
   protected:
 
     //! Returns a uchar pointer to the first piece of data
@@ -179,6 +182,8 @@ namespace dsp {
     // do the work of the null_clone: copy necessary attributes from the given TimeSeries
     void null_work (const TimeSeries* from);
 
+    Reference::To<Engine> engine;
+
   private:
 
     //! Order of the dimensions
@@ -202,7 +207,21 @@ namespace dsp {
 
 
   };
-  
+ 
+  class TimeSeries::Engine : public OwnStream
+  {
+  public:
+
+    virtual void prepare (dsp::TimeSeries * to) = 0;
+
+    virtual void prepare_buffer (unsigned nbytes) = 0;
+
+    virtual void copy_data_fpt (const dsp::TimeSeries * copy, 
+                                uint64_t idat_start = 0, 
+                                uint64_t ndat = 0) = 0;
+
+  };
+
 }
 
 #endif
