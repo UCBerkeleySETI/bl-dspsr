@@ -88,6 +88,8 @@ static std::string get_sigproc_telescope_name (int _id)
       return "GMRT";
     case 8:
       return "Effelsberg";
+    case 9;
+      return "ATA";
     case 11:
       return "LOFAR";
     case 12:
@@ -127,6 +129,7 @@ static int get_sigproc_telescope_id (string name)
     else if (itoa == "EF") return 8;
     else if (itoa == "LF") return 11;
     else if (itoa == "VL") return 12;
+    else if (itoa == "AT") return 9;
     else return 0;
   }
   catch (Error &error)
@@ -159,6 +162,8 @@ static std::string get_sigproc_machine_name (int _id, int _telescope)
       return "GMRTFB";
     case 8:
       return "PULSAR2000";
+    case 9:
+      return "ATA";
     case 10:
       if (_telescope == SIGPROC_PARKES)
         return "BPSR";
