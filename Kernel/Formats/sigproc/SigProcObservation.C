@@ -88,7 +88,7 @@ static std::string get_sigproc_telescope_name (int _id)
       return "GMRT";
     case 8:
       return "Effelsberg";
-    case 9;
+    case 9:
       return "ATA";
     case 11:
       return "LOFAR";
